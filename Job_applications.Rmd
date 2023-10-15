@@ -1,0 +1,24 @@
+---
+title: "Job_applications"
+output: html_document
+date: "2023-10-15"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+Team Global project on Job Applications Data
+```{r Libraries}
+library(ggplot2)
+
+```
+
+
+
+```{r Import_data}
+df = data.frame(read.csv('stackoverflow_full.csv', header = TRUE))
+head(df)
+```
+
