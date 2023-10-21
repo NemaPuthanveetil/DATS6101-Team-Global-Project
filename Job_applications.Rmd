@@ -1,14 +1,24 @@
 ---
 title: "Job_applications"
-output: html_document
+authors: "Sajan Kumar Kar, Sai Pavan Mekala, Neelima Puthanveetil, Sandhya Karki"
 date: "2023-10-15"
+output:
+  html_document:
+    code_folding: hide
+    number_sections: false
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+## Importing Libraries & Data
 Team Global project on Job Applications Data
 ```{r Libraries}
 library(ggplot2)
@@ -16,62 +26,114 @@ library(ggplot2)
 ```
 
 
-
 ```{r Import_data}
 df = data.frame(read.csv('stackoverflow_full.csv', header = TRUE))
 head(df)
 ```
 ```{r}
-#To remove rows with missing values and duplicates
-df <- na.omit(df)
-df <- unique(df)
-```
-
-```{r}
 #structure of a data frame 
 str(df) 
 ```
+The dataframe has 73462 records. We have index, employemnt, yearscode, yearscodepro and previoussalary as integer type and the rest are of character types. Going ahead we would need to convert some of them to factors.
 
+## Data preprocessing & Cleaning
+
+Let's first check for missing values and duplicate values if any.
 
 ```{r}
 # Check the missing values and count them in each column
-missing_df <- colSums(is.na(df))
+print(colSums(is.na(df)))
 ```
 
 ```{r}
-# Print the count of missing values in each column
-print(missing_df)
+# Check duplicates
+length(unique(df$Index))
+```
+
+We notice that there are no missing values and duplicates in the data. So, we have all the observations to work with.
+
+Now that we know this, let us do some cleaning and feature engineering. First we'll extract the numeric columns.
+
+```{r}
+# Extract the numeric columns
+head(subset(df, select = c(names(df)[sapply(df, is.numeric)])))
+```
+
+* The index column will not be required, so we will drop it (We can use the in-built index of a dataframe).
+* We will convert employment into factor and change the values for a better sense.
+* We will do the same for employed
+
+```{r}
+df_clean <- subset(df, select = -c(Index))
+df_clean$Employment = as.character(df_clean$Employment)
+df_clean$Employment[df_clean$Employment == "1"] <- "currently_employed"
+df_clean$Employment[df_clean$Employment=="0"] <- "not_currently_employed"
+df_clean$Employment = factor(df_clean$Employment)
+df_clean$Employed = as.character(df_clean$Employed)
+df_clean$Employed[df_clean$Employed == "1"] <- "hired"
+df_clean$Employed[df_clean$Employed == "0"] <- "not_hired"
+df_clean$Employed = factor(df_clean$Employed)
+str(df_clean)
+```
+Now let's take a look at the character columns.
+
+```{r}
+# Extract the character columns
+head(subset(df_clean, select = c(names(df)[sapply(df, is.character)])))
 
 ```
+
+* Except Country and Haveworkedwith, the rest are clearly categorical features, so we will convert them to factor data type
+* Edlevel is an ordinal feature 
 
 
 ```{r}
-# Identify the indices of columns that are factors or characters
-factor_columns <- sapply(df, is.factor)
-character_columns <- sapply(df, is.character)
+df_clean$Age = factor(df_clean$Age)
+df_clean$Accessibility = factor(df_clean$Accessibility)
+df_clean$EdLevel = factor(df_clean$EdLevel, ordered = T, 
+                          levels = c("Other", "NoHigherEd", "Undergraduate", "Master", "PhD"))
+df_clean$Gender = factor(df_clean$Gender)
+df_clean$MentalHealth = factor(df_clean$MentalHealth)
+df_clean$MainBranch = factor(df_clean$MainBranch)
+str(df_clean)
 ```
 
+*"Other" for now is set to be the lowest level. Ideally it should not be excluded from the levels. But there are about 10000 observations with "other", hence we cannot drop so many rows*
+
+Let's check the number of different countries we have.
 
 ```{r}
-# Get the names of numerical columns in the dataset
-numerical_columns <- names(df)[sapply(df, is.numeric)]
-numerical_columns
+length(unique(df_clean$Country))
+
 ```
 
+There are 172 different countries. (Leaving this as it is for the time being)
+
+Lets take a look at the data now:
+```{r}
+df_final <- df_clean
+head(df_final)
+
+```
+
+
+
+
+## EDA
 
 ```{r}
 # Create a list of the columns that we use in combined boxplot
 columns_to_plot <- c("YearsCode", "YearsCodePro", "PreviousSalary", "Employed", "ComputerSkills")
 
 # Create a boxplot for each column and store it in a list
-boxplots <- lapply(data[columns_to_plot], boxplot, main = "Combined Boxplot")
+boxplots <- lapply(df[columns_to_plot], boxplot, main = "Combined Boxplot")
 
 # Set up the plotting area to display all boxplots together
 par(mfrow = c(1, length(columns_to_plot)))
 
 # Display the boxplots
 for (i in 1:length(boxplots)) {
-  boxplot(data[[columns_to_plot[i]]], main = columns_to_plot[i])
+  boxplot(df[[columns_to_plot[i]]], main = columns_to_plot[i])
 }
 
 # plotting area layout
@@ -88,10 +150,16 @@ par(mfrow = c(1, length(columns_to_plot)))
 
 # Create and display boxplots without outliers
 for (col in columns_to_plot) {
-  boxplot(data[[col]], main = col, outline = FALSE)
+  boxplot(df[[col]], main = col, outline = FALSE)
 }
 
 # plotting area layout
 par(mfrow = c(1, 1))
+```
+
+## Hypotheses Testing
+```{r}
+
+
 ```
 
