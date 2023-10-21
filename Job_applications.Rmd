@@ -21,4 +21,77 @@ library(ggplot2)
 df = data.frame(read.csv('stackoverflow_full.csv', header = TRUE))
 head(df)
 ```
+```{r}
+#To remove rows with missing values and duplicates
+df <- na.omit(df)
+df <- unique(df)
+```
+
+```{r}
+#structure of a data frame 
+str(df) 
+```
+
+
+```{r}
+# Check the missing values and count them in each column
+missing_df <- colSums(is.na(df))
+```
+
+```{r}
+# Print the count of missing values in each column
+print(missing_df)
+
+```
+
+
+```{r}
+# Identify the indices of columns that are factors or characters
+factor_columns <- sapply(df, is.factor)
+character_columns <- sapply(df, is.character)
+```
+
+
+```{r}
+# Get the names of numerical columns in the dataset
+numerical_columns <- names(df)[sapply(df, is.numeric)]
+numerical_columns
+```
+
+
+```{r}
+# Create a list of the columns that we use in combined boxplot
+columns_to_plot <- c("YearsCode", "YearsCodePro", "PreviousSalary", "Employed", "ComputerSkills")
+
+# Create a boxplot for each column and store it in a list
+boxplots <- lapply(data[columns_to_plot], boxplot, main = "Combined Boxplot")
+
+# Set up the plotting area to display all boxplots together
+par(mfrow = c(1, length(columns_to_plot)))
+
+# Display the boxplots
+for (i in 1:length(boxplots)) {
+  boxplot(data[[columns_to_plot[i]]], main = columns_to_plot[i])
+}
+
+# plotting area layout
+par(mfrow = c(1, 1))
+```
+
+
+```{r}
+#  list of the columns that we use in combined boxplot
+columns_to_plot <- c("YearsCode", "YearsCodePro", "PreviousSalary", "Employed", "ComputerSkills")
+
+# display all boxplots together
+par(mfrow = c(1, length(columns_to_plot)))
+
+# Create and display boxplots without outliers
+for (col in columns_to_plot) {
+  boxplot(data[[col]], main = col, outline = FALSE)
+}
+
+# plotting area layout
+par(mfrow = c(1, 1))
+```
 
