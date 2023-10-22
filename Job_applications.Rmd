@@ -116,6 +116,16 @@ head(df_final)
 
 ```
 
+```{r}
+
+library(tidyr)
+
+df %>%
+separate_rows(HaveWorkedWith, sep = ";") %>% 
+group_by(HaveWorkedWith) %>%
+summarise(Count = n()) %>%
+arrange(desc(Count))
+```
 
 
 
@@ -156,6 +166,7 @@ for (col in columns_to_plot) {
 # plotting area layout
 par(mfrow = c(1, 1))
 ```
+
 
 ## Hypotheses Testing
 ```{r}
