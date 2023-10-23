@@ -22,7 +22,8 @@ knitr::opts_chunk$set(echo = TRUE)
 Team Global project on Job Applications Data
 ```{r Libraries}
 library(ggplot2)
-
+library(tidyr)
+library(dplyr)
 ```
 
 
@@ -116,18 +117,6 @@ head(df_final)
 
 ```
 
-```{r}
-
-library(tidyr)
-
-df %>%
-separate_rows(HaveWorkedWith, sep = ";") %>% 
-group_by(HaveWorkedWith) %>%
-summarise(Count = n()) %>%
-arrange(desc(Count))
-```
-
-
 
 ## EDA
 
@@ -136,14 +125,14 @@ arrange(desc(Count))
 columns_to_plot <- c("YearsCode", "YearsCodePro", "PreviousSalary", "Employed", "ComputerSkills")
 
 # Create a boxplot for each column and store it in a list
-boxplots <- lapply(df[columns_to_plot], boxplot, main = "Combined Boxplot")
+boxplots <- lapply(df_final[columns_to_plot], boxplot, main = "Combined Boxplot")
 
 # Set up the plotting area to display all boxplots together
 par(mfrow = c(1, length(columns_to_plot)))
 
 # Display the boxplots
 for (i in 1:length(boxplots)) {
-  boxplot(df[[columns_to_plot[i]]], main = columns_to_plot[i])
+  boxplot(df_final[[columns_to_plot[i]]], main = columns_to_plot[i])
 }
 
 # plotting area layout
@@ -160,11 +149,71 @@ par(mfrow = c(1, length(columns_to_plot)))
 
 # Create and display boxplots without outliers
 for (col in columns_to_plot) {
-  boxplot(df[[col]], main = col, outline = FALSE)
+  boxplot(df_final[[col]], main = col, outline = FALSE)
 }
 
 # plotting area layout
 par(mfrow = c(1, 1))
+```
+
+
+
+```{r}
+
+ggplot(data = subset(df_final, subset = Employed=='hired'), aes(EdLevel, after_stat(count))) + 
+  geom_bar(aes(fill = Gender), position = 'dodge', alpha = 0.5) +
+  labs(title = "Education Level by gender for employed workers", x="Education Level", y="Count")
+
+```
+
+```{r}
+ggplot(data = df_final, aes(EdLevel)) + 
+  geom_bar(aes(fill = Employment), position = 'dodge', alpha = 0.5) +
+  labs(title = "Education Level by Employment", x="Education Level", y="Count")
+
+```
+
+```{r}
+ggplot(data = df_final, aes(MainBranch)) + 
+  geom_bar(aes(fill = Age), position = 'dodge', alpha = 0.5) +
+  labs(title = "MainBranch by Age", x="MainBranch", y="Count")
+
+```
+
+```{r}
+ggplot(data = df_final, aes(x = PreviousSalary, fill = MentalHealth)) +
+  geom_density(alpha = 0.5) +
+  labs(title = "Density plot of Previous Salary by Mental Health", x="Previous Salary", y= 'Density')
+
+```
+
+```{r}
+
+ggplot(data = df_final, aes(x = MentalHealth, y = PreviousSalary)) +
+  geom_jitter(alpha = 0.5, col = 'navy') +
+  labs(title = "Previous Salary by Mental Health", x = 'Mental Health', y="Previous Salary")
+
+```
+
+```{r}
+plotdata <- df_final %>%
+  group_by(MentalHealth) %>%
+  summarize(mean_prevsalary = mean(PreviousSalary))
+
+ggplot(data = plotdata, aes(x = MentalHealth, y = mean_prevsalary)) +
+  geom_bar(stat = 'identity', alpha = 0.5) +
+  labs(title = "Mean Previous Salary by Mental Health", x = 'Mental Health', y="Previous Salary")
+
+```
+
+
+```{r}
+
+df_final %>%
+separate_rows(HaveWorkedWith, sep = ";") %>% 
+group_by(HaveWorkedWith) %>%
+summarise(Count = n()) %>%
+arrange(desc(Count))
 ```
 
 
