@@ -31,7 +31,7 @@ library(dplyr)
 df = data.frame(read.csv('stackoverflow_full.csv', header = TRUE))
 head(df)
 ```
-```{r}
+```{r Structure}
 #structure of a data frame 
 str(df) 
 ```
@@ -41,12 +41,12 @@ The dataframe has 73462 records. We have index, employemnt, yearscode, yearscode
 
 Let's first check for missing values and duplicate values if any.
 
-```{r}
+```{r missing values}
 # Check the missing values and count them in each column
 print(colSums(is.na(df)))
 ```
 
-```{r}
+```{r duplicates}
 # Check duplicates
 length(unique(df$Index))
 ```
@@ -55,7 +55,7 @@ We notice that there are no missing values and duplicates in the data. So, we ha
 
 Now that we know this, let us do some cleaning and feature engineering. First we'll extract the numeric columns.
 
-```{r}
+```{r Numeric columns}
 # Extract the numeric columns
 head(subset(df, select = c(names(df)[sapply(df, is.numeric)])))
 ```
@@ -64,7 +64,7 @@ head(subset(df, select = c(names(df)[sapply(df, is.numeric)])))
 * We will convert employment into factor and change the values for a better sense.
 * We will do the same for employed
 
-```{r}
+```{r numeric feature cleaning}
 df_clean <- subset(df, select = -c(Index))
 df_clean$Employment = as.character(df_clean$Employment)
 df_clean$Employment[df_clean$Employment == "1"] <- "currently_employed"
@@ -78,7 +78,7 @@ str(df_clean)
 ```
 Now let's take a look at the character columns.
 
-```{r}
+```{r char columns}
 # Extract the character columns
 head(subset(df_clean, select = c(names(df)[sapply(df, is.character)])))
 
@@ -88,7 +88,7 @@ head(subset(df_clean, select = c(names(df)[sapply(df, is.character)])))
 * Edlevel is an ordinal feature 
 
 
-```{r}
+```{r char feature cleaning}
 df_clean$Age = factor(df_clean$Age)
 df_clean$Accessibility = factor(df_clean$Accessibility)
 df_clean$EdLevel = factor(df_clean$EdLevel, ordered = T, 
@@ -111,7 +111,7 @@ length(unique(df_clean$Country))
 There are 172 different countries. (Leaving this as it is for the time being)
 
 Lets take a look at the data now:
-```{r}
+```{r final data}
 df_final <- df_clean
 head(df_final)
 
@@ -158,7 +158,7 @@ par(mfrow = c(1, 1))
 
 
 
-```{r}
+```{r plot- Ed by Gender}
 
 ggplot(data = subset(df_final, subset = Employed=='hired'), aes(EdLevel, after_stat(count))) + 
   geom_bar(aes(fill = Gender), position = 'dodge', alpha = 0.5) +
@@ -166,28 +166,28 @@ ggplot(data = subset(df_final, subset = Employed=='hired'), aes(EdLevel, after_s
 
 ```
 
-```{r}
+```{r plot- Ed by Emp}
 ggplot(data = df_final, aes(EdLevel)) + 
   geom_bar(aes(fill = Employment), position = 'dodge', alpha = 0.5) +
   labs(title = "Education Level by Employment", x="Education Level", y="Count")
 
 ```
 
-```{r}
+```{r plot- MainBranch by Age}
 ggplot(data = df_final, aes(MainBranch)) + 
   geom_bar(aes(fill = Age), position = 'dodge', alpha = 0.5) +
   labs(title = "MainBranch by Age", x="MainBranch", y="Count")
 
 ```
 
-```{r}
+```{r plot- PrevSal by MentalHealth(1)}
 ggplot(data = df_final, aes(x = PreviousSalary, fill = MentalHealth)) +
   geom_density(alpha = 0.5) +
   labs(title = "Density plot of Previous Salary by Mental Health", x="Previous Salary", y= 'Density')
 
 ```
 
-```{r}
+```{r plot- PrevSal by MentalHealth(2)}
 
 ggplot(data = df_final, aes(x = MentalHealth, y = PreviousSalary)) +
   geom_jitter(alpha = 0.5, col = 'navy') +
@@ -195,7 +195,7 @@ ggplot(data = df_final, aes(x = MentalHealth, y = PreviousSalary)) +
 
 ```
 
-```{r}
+```{r plot- PrevSal by MentalHealth(3)}
 plotdata <- df_final %>%
   group_by(MentalHealth) %>%
   summarize(mean_prevsalary = mean(PreviousSalary))
