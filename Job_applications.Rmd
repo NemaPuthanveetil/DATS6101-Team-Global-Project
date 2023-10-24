@@ -272,6 +272,11 @@ masters_employed_ztest
 
 ```
 
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> 50847d79f6427aae2c2b96d5d71c0d784ca234b4
 ```{r, two sample z test for PhD}
 # We first subset into the different education levels, here PhD
 phd <- subset(df_final, df_final$EdLevel == "PhD")
@@ -294,6 +299,7 @@ phd_nonmales_employed <- (subset(phd_nonmales, phd_nonmales$Employment == "curre
 phd_employed_ztest <- prop.test(c(2153, 185), c(2402,206))
 phd_employed_ztest
 ```
+<<<<<<< HEAD
 
 
 ```{r, ANOVA test}
@@ -306,6 +312,8 @@ phd_employed_ztest
 
 ```{r, two sample z test for means}
 
+=======
+>>>>>>> 50847d79f6427aae2c2b96d5d71c0d784ca234b4
 ```{r, ANOVA test}
 # dep is quantitative and more than 3 independent categories
 ```
