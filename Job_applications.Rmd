@@ -303,6 +303,10 @@ anovaRes = aov(ComputerSkills ~ EdLevel, data=df_final)
 summary(anovaRes)
 ```
 
+```{r, Post Hoc Tukey's Test}
+# Since we have a highly significant p-value based on our ANOVA test above, we want to conduct a Post Hoc analysis of the test using Tukey's method
+```
+
 ```{r, Chi square}
 # GOF: dep is categorical, independent x variable is two samples
 # We first want to create a contingency table to determine whether classification of age is significant in determining whether an individual is a professional developer or not
