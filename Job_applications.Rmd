@@ -272,10 +272,7 @@ masters_employed_ztest
 
 ```
 
-<<<<<<< HEAD
 
-=======
->>>>>>> tg_nema
 ```{r, two sample z test for PhD}
 # We first subset into the different education levels, here PhD
 phd <- subset(df_final, df_final$EdLevel == "PhD")
@@ -298,22 +295,7 @@ phd_nonmales_employed <- (subset(phd_nonmales, phd_nonmales$Employment == "curre
 phd_employed_ztest <- prop.test(c(2153, 185), c(2402,206))
 phd_employed_ztest
 ```
-<<<<<<< HEAD
 
-=======
->>>>>>> tg_nema
-
-
-```{r, ANOVA test}
-# dep is quantitative and more than 3 independent categories
-```
-
-```{r, Chi square}
-# GOF: dep is categorical, independent x variable is two samples
-```
-
-```{r, two sample z test for means}
-```
 
 ```{r, ANOVA test}
 # dep is quantitative and more than 3 independent categories
