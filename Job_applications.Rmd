@@ -142,18 +142,19 @@ DataExplorer::create_report(df)
 columns_to_plot <- c("YearsCode", "YearsCodePro", "PreviousSalary", "Employed", "ComputerSkills")
 
 # Create a boxplot for each column and store it in a list
-boxplots <- lapply(df_final[columns_to_plot], boxplot, main = "Combined Boxplot")
+boxplots <- lapply(df[columns_to_plot], boxplot, main = "Combined Boxplot", col="brown")
 
 # Set up the plotting area to display all boxplots together
 par(mfrow = c(1, length(columns_to_plot)))
 
 # Display the boxplots
 for (i in 1:length(boxplots)) {
-  boxplot(df_final[[columns_to_plot[i]]], main = columns_to_plot[i])
+  boxplot(df[[columns_to_plot[i]]], main = columns_to_plot[i],col = "lightblue")
 }
 
 # plotting area layout
 par(mfrow = c(1, 1))
+
 ```
 
 
@@ -166,7 +167,7 @@ par(mfrow = c(1, length(columns_to_plot)))
 
 # Create and display boxplots without outliers
 for (col in columns_to_plot) {
-  boxplot(df_final[[col]], main = col, outline = FALSE)
+  boxplot(df[[col]], main = col, outline = FALSE, col="navy")
 }
 
 # plotting area layout
