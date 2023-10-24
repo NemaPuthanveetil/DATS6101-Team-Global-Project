@@ -1,24 +1,283 @@
 ---
 title: "Job_applications"
-output: html_document
+authors: "Sajan Kumar Kar, Sai Pavan Mekala, Neelima Puthanveetil, Sandhya Karki"
 date: "2023-10-15"
+output:
+  html_document:
+    code_folding: hide
+    number_sections: false
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+## Importing Libraries & Data
 Team Global project on Job Applications Data
 ```{r Libraries}
 library(ggplot2)
-
+library(tidyr)
+library(dplyr)
 ```
-
 
 
 ```{r Import_data}
 df = data.frame(read.csv('stackoverflow_full.csv', header = TRUE))
 head(df)
 ```
+```{r Structure}
+#structure of a data frame 
+str(df) 
+```
+The dataframe has 73462 records. We have index, employemnt, yearscode, yearscodepro and previoussalary as integer type and the rest are of character types. Going ahead we would need to convert some of them to factors.
 
+## Data preprocessing & Cleaning
+
+Let's first check for missing values and duplicate values if any.
+
+```{r missing values}
+# Check the missing values and count them in each column
+print(colSums(is.na(df)))
+```
+
+```{r duplicates}
+# Check duplicates
+length(unique(df$Index))
+```
+
+We notice that there are no missing values and duplicates in the data. So, we have all the observations to work with.
+
+Now that we know this, let us do some cleaning and feature engineering. First we'll extract the numeric columns.
+
+```{r Numeric columns}
+# Extract the numeric columns
+head(subset(df, select = c(names(df)[sapply(df, is.numeric)])))
+```
+
+* The index column will not be required, so we will drop it (We can use the in-built index of a dataframe).
+* We will convert employment into factor and change the values for a better sense.
+* We will do the same for employed
+
+```{r numeric feature cleaning}
+df_clean <- subset(df, select = -c(Index))
+df_clean$Employment = as.character(df_clean$Employment)
+df_clean$Employment[df_clean$Employment == "1"] <- "currently_employed"
+df_clean$Employment[df_clean$Employment=="0"] <- "not_currently_employed"
+df_clean$Employment = factor(df_clean$Employment)
+df_clean$Employed = as.character(df_clean$Employed)
+df_clean$Employed[df_clean$Employed == "1"] <- "hired"
+df_clean$Employed[df_clean$Employed == "0"] <- "not_hired"
+df_clean$Employed = factor(df_clean$Employed)
+str(df_clean)
+```
+Now let's take a look at the character columns.
+
+```{r char columns}
+# Extract the character columns
+head(subset(df_clean, select = c(names(df)[sapply(df, is.character)])))
+
+```
+
+* Except Country and Haveworkedwith, the rest are clearly categorical features, so we will convert them to factor data type
+* Edlevel is an ordinal feature 
+
+
+```{r char feature cleaning}
+df_clean$Age = factor(df_clean$Age)
+df_clean$Accessibility = factor(df_clean$Accessibility)
+df_clean$EdLevel = factor(df_clean$EdLevel, ordered = T, 
+                          levels = c("Other", "NoHigherEd", "Undergraduate", "Master", "PhD"))
+df_clean$Gender = factor(df_clean$Gender)
+df_clean$MentalHealth = factor(df_clean$MentalHealth)
+df_clean$MainBranch = factor(df_clean$MainBranch)
+str(df_clean)
+```
+
+*"Other" for now is set to be the lowest level. Ideally it should not be excluded from the levels. But there are about 10000 observations with "other", hence we cannot drop so many rows*
+
+Let's check the number of different countries we have.
+
+```{r}
+length(unique(df_clean$Country))
+
+```
+
+There are 172 different countries. (Leaving this as it is for the time being)
+
+Lets take a look at the data now:
+```{r final data}
+df_final <- df_clean
+head(df_final)
+
+```
+
+
+## EDA
+
+```{r}
+# Create a list of the columns that we use in combined boxplot
+columns_to_plot <- c("YearsCode", "YearsCodePro", "PreviousSalary", "Employed", "ComputerSkills")
+
+# Create a boxplot for each column and store it in a list
+boxplots <- lapply(df_final[columns_to_plot], boxplot, main = "Combined Boxplot")
+
+# Set up the plotting area to display all boxplots together
+par(mfrow = c(1, length(columns_to_plot)))
+
+# Display the boxplots
+for (i in 1:length(boxplots)) {
+  boxplot(df_final[[columns_to_plot[i]]], main = columns_to_plot[i])
+}
+
+# plotting area layout
+par(mfrow = c(1, 1))
+```
+
+
+```{r}
+#  list of the columns that we use in combined boxplot
+columns_to_plot <- c("YearsCode", "YearsCodePro", "PreviousSalary", "Employed", "ComputerSkills")
+
+# display all boxplots together
+par(mfrow = c(1, length(columns_to_plot)))
+
+# Create and display boxplots without outliers
+for (col in columns_to_plot) {
+  boxplot(df_final[[col]], main = col, outline = FALSE)
+}
+
+# plotting area layout
+par(mfrow = c(1, 1))
+```
+
+
+
+```{r plot- Ed by Gender}
+
+ggplot(data = subset(df_final, subset = Employed=='hired'), aes(EdLevel, after_stat(count))) + 
+  geom_bar(aes(fill = Gender), position = 'dodge', alpha = 0.5) +
+  labs(title = "Education Level by gender for employed workers", x="Education Level", y="Count")
+
+```
+
+```{r plot- Ed by Emp}
+ggplot(data = df_final, aes(EdLevel)) + 
+  geom_bar(aes(fill = Employment), position = 'dodge', alpha = 0.5) +
+  labs(title = "Education Level by Employment", x="Education Level", y="Count")
+
+```
+
+```{r plot- MainBranch by Age}
+ggplot(data = df_final, aes(MainBranch)) + 
+  geom_bar(aes(fill = Age), position = 'dodge', alpha = 0.5) +
+  labs(title = "MainBranch by Age", x="MainBranch", y="Count")
+
+```
+
+```{r plot- PrevSal by MentalHealth(1)}
+ggplot(data = df_final, aes(x = PreviousSalary, fill = MentalHealth)) +
+  geom_density(alpha = 0.5) +
+  labs(title = "Density plot of Previous Salary by Mental Health", x="Previous Salary", y= 'Density')
+
+```
+
+```{r plot- PrevSal by MentalHealth(2)}
+
+ggplot(data = df_final, aes(x = MentalHealth, y = PreviousSalary)) +
+  geom_jitter(alpha = 0.5, col = 'navy') +
+  labs(title = "Previous Salary by Mental Health", x = 'Mental Health', y="Previous Salary")
+
+```
+
+```{r plot- PrevSal by MentalHealth(3)}
+plotdata <- df_final %>%
+  group_by(MentalHealth) %>%
+  summarize(mean_prevsalary = mean(PreviousSalary))
+
+ggplot(data = plotdata, aes(x = MentalHealth, y = mean_prevsalary)) +
+  geom_bar(stat = 'identity', alpha = 0.5) +
+  labs(title = "Mean Previous Salary by Mental Health", x = 'Mental Health', y="Previous Salary")
+
+```
+
+
+```{r}
+
+df_final %>%
+separate_rows(HaveWorkedWith, sep = ";") %>% 
+group_by(HaveWorkedWith) %>%
+summarise(Count = n()) %>%
+arrange(desc(Count))
+```
+
+
+Because we have over 73,000 data points, we can use statistical methods that apply to data satisfying normality conditions (because of the central limit theorem).
+
+MAKE SURE TO INCLUDE TEST ASSUMPTIONS
+
+## Hypotheses Testing
+
+We first want to check whether there is a difference in the number of males vs non-males employed at every level of education.
+```{r, two sample z test for undergraduate for proportions}
+# We first subset into the different education levels, here undergraduate
+undergrad <- subset(df_final, df_final$EdLevel == "Undergraduate")
+
+
+
+# For the two sample z test, we need our two samples, males and nonmales
+undergrad_male <- subset(undergrad, undergrad$Gender == "Man") # Sample 1, males
+
+undergrad_male_employed <- subset(undergrad_male, undergrad_male$Employment == "currently_employed")
+# undergrad_male_nonemployed <- subset(undergrad_male, undergrad_male$Employment != "currently_employed")
+
+
+
+undergrad_nonmales <- subset(undergrad, undergrad$Gender != "Man") # Sample 2, females and nonbinary
+
+undergrad_nonmales_employed <- (subset(undergrad_nonmales, undergrad_nonmales$Employment == "currently_employed"))
+# undergrad_nonmales_nonemployed <- (subset(undergrad_nonmales, undergrad_nonmales$Employment != "currently_employed"))
+
+
+
+undergrad_employed_ztest <- prop.test(c(31509, 2319), c(34855,2547))
+undergrad_employed_ztest
+```
+```{r, two sample z test for masters}
+# We first subset into the different education levels, here masters
+masters <- subset(df_final, df_final$EdLevel == "Master")
+
+
+# For the two sample z test, we need our two samples, males and nonmales
+masters_male <- subset(masters, masters$Gender == "Man") # Sample 1, males
+
+masters_male_employed <- subset(masters_male, masters_male$Employment == "currently_employed")
+# undergrad_male_nonemployed <- subset(undergrad_male, undergrad_male$Employment != "currently_employed")
+
+
+masters_nonmales <- subset(masters, undergrad$Gender != "Man") # Sample 2, females and nonbinary
+
+masters_nonmales_employed <- (subset(masters_nonmales, masters_nonmales$Employment == "currently_employed"))
+# undergrad_nonmales_nonemployed <- (subset(undergrad_nonmales, undergrad_nonmales$Employment != "currently_employed"))
+
+
+
+masters_employed_ztest <- prop.test(c(15447, 1105), c(17579,2547))
+masters_employed_ztest
+```
+
+```{r, ANOVA test}
+# dep is quantitative and more than 3 independent categories
+```
+
+```{r, Chi square}
+# GOF: dep is categorical, independent x variable is two samples
+```
+
+```{r, two sample z test for means}
+```
