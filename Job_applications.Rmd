@@ -271,6 +271,30 @@ masters_employed_ztest <- prop.test(c(15447, 1105), c(17579,2547))
 masters_employed_ztest
 ```
 
+
+
+```{r, two sample z test for PhD}
+# We first subset into the different education levels, here PhD
+phd <- subset(df_final, df_final$EdLevel == "PhD")
+
+
+# For the two sample z test, we need our two samples, males and nonmales
+phd_male <- subset(phd, phd$Gender == "Man") # Sample 1, males
+
+phd_male_employed <- subset(phd_male, phd_male$Employment == "currently_employed")
+# undergrad_male_nonemployed <- subset(undergrad_male, undergrad_male$Employment != "currently_employed")
+
+
+phd_nonmales <- subset(phd, phd$Gender != "Man") # Sample 2, females and nonbinary
+
+phd_nonmales_employed <- (subset(phd_nonmales, phd_nonmales$Employment == "currently_employed"))
+# undergrad_nonmales_nonemployed <- (subset(undergrad_nonmales, undergrad_nonmales$Employment != "currently_employed"))
+
+
+
+phd_employed_ztest <- prop.test(c(2153, 185), c(2402,206))
+phd_employed_ztest
+```
 ```{r, ANOVA test}
 # dep is quantitative and more than 3 independent categories
 ```
