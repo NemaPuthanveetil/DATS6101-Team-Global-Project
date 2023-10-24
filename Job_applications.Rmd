@@ -24,6 +24,7 @@ Team Global project on Job Applications Data
 library(ggplot2)
 library(tidyr)
 library(dplyr)
+library(ezids)
 ```
 
 
@@ -298,7 +299,8 @@ phd_employed_ztest
 
 
 ```{r, ANOVA test}
-# dep is quantitative and more than 3 independent categories
+anovaRes = aov(ComputerSkills ~ EdLevel, data=df_final)
+summary(anovaRes)
 ```
 
 ```{r, Chi square}
@@ -321,5 +323,3 @@ chitest
 
 ```{r, two sample z test for means}
 ```
-
-test comment by Nema
