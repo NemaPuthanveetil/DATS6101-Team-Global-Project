@@ -25,6 +25,7 @@ library(ggplot2)
 library(tidyr)
 library(dplyr)
 library(ezids)
+
 ```
 
 
@@ -118,8 +119,23 @@ head(df_final)
 
 ```
 
+```{r}
+
+df_final %>%
+separate_rows(HaveWorkedWith, sep = ";") %>% 
+group_by(HaveWorkedWith) %>%
+summarise(Count = n()) %>%
+arrange(desc(Count))
+```
+
 
 ## EDA
+
+
+```{r}
+library(DataExplorer)
+DataExplorer::create_report(df)
+```
 
 ```{r}
 # Create a list of the columns that we use in combined boxplot
@@ -207,15 +223,6 @@ ggplot(data = plotdata, aes(x = MentalHealth, y = mean_prevsalary)) +
 
 ```
 
-
-```{r}
-
-df_final %>%
-separate_rows(HaveWorkedWith, sep = ";") %>% 
-group_by(HaveWorkedWith) %>%
-summarise(Count = n()) %>%
-arrange(desc(Count))
-```
 
 
 Because we have over 73,000 data points, we can use statistical methods that apply to data satisfying normality conditions (because of the central limit theorem).
