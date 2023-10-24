@@ -270,9 +270,7 @@ masters_nonmales_employed <- (subset(masters_nonmales, masters_nonmales$Employme
 masters_employed_ztest <- prop.test(c(15447, 1105), c(17579,2547))
 masters_employed_ztest
 
-
 ```
-
 
 
 ```{r, two sample z test for PhD}
@@ -297,6 +295,20 @@ phd_nonmales_employed <- (subset(phd_nonmales, phd_nonmales$Employment == "curre
 phd_employed_ztest <- prop.test(c(2153, 185), c(2402,206))
 phd_employed_ztest
 ```
+
+
+
+```{r, ANOVA test}
+# dep is quantitative and more than 3 independent categories
+```
+
+```{r, Chi square}
+# GOF: dep is categorical, independent x variable is two samples
+```
+
+```{r, two sample z test for means}
+```
+
 ```{r, ANOVA test}
 # dep is quantitative and more than 3 independent categories
 ```
