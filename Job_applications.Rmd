@@ -269,6 +269,8 @@ masters_nonmales_employed <- (subset(masters_nonmales, masters_nonmales$Employme
 
 masters_employed_ztest <- prop.test(c(15447, 1105), c(17579,2547))
 masters_employed_ztest
+
+
 ```
 
 ```{r, ANOVA test}
