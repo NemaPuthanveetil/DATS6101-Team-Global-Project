@@ -218,12 +218,15 @@ arrange(desc(Count))
 
 
 Because we have over 73,000 data points, we can use statistical methods that apply to data satisfying normality conditions (because of the central limit theorem).
+
+MAKE SURE TO INCLUDE TEST ASSUMPTIONS
+
 ## Hypotheses Testing
 
 We first want to check whether there is a difference in the number of males vs non-males employed at every level of education.
-```{r, two sample z test for undergraduate}
+```{r, two sample z test for undergraduate for proportions}
 # We first subset into the different education levels, here undergraduate
-undergrad <- subset(df_clean, df_clean$EdLevel == "Undergraduate")
+undergrad <- subset(df_final, df_final$EdLevel == "Undergraduate")
 
 
 
@@ -247,7 +250,7 @@ undergrad_employed_ztest
 ```
 ```{r, two sample z test for masters}
 # We first subset into the different education levels, here masters
-masters <- subset(df_clean, df_clean$EdLevel == "Master")
+masters <- subset(df_final, df_final$EdLevel == "Master")
 
 
 # For the two sample z test, we need our two samples, males and nonmales
@@ -266,4 +269,15 @@ masters_nonmales_employed <- (subset(masters_nonmales, masters_nonmales$Employme
 
 masters_employed_ztest <- prop.test(c(15447, 1105), c(17579,2547))
 masters_employed_ztest
+```
+
+```{r, ANOVA test}
+# dep is quantitative and more than 3 independent categories
+```
+
+```{r, Chi square}
+# GOF: dep is categorical, independent x variable is two samples
+```
+
+```{r, two sample z test for means}
 ```
