@@ -217,9 +217,53 @@ arrange(desc(Count))
 ```
 
 
+Because we have over 73,000 data points, we can use statistical methods that apply to data satisfying normality conditions (because of the central limit theorem).
 ## Hypotheses Testing
-```{r}
+
+We first want to check whether there is a difference in the number of males vs non-males employed at every level of education.
+```{r, two sample z test for undergraduate}
+# We first subset into the different education levels, here undergraduate
+undergrad <- subset(df_clean, df_clean$EdLevel == "Undergraduate")
 
 
+
+# For the two sample z test, we need our two samples, males and nonmales
+undergrad_male <- subset(undergrad, undergrad$Gender == "Man") # Sample 1, males
+
+undergrad_male_employed <- subset(undergrad_male, undergrad_male$Employment == "currently_employed")
+# undergrad_male_nonemployed <- subset(undergrad_male, undergrad_male$Employment != "currently_employed")
+
+
+
+undergrad_nonmales <- subset(undergrad, undergrad$Gender != "Man") # Sample 2, females and nonbinary
+
+undergrad_nonmales_employed <- (subset(undergrad_nonmales, undergrad_nonmales$Employment == "currently_employed"))
+# undergrad_nonmales_nonemployed <- (subset(undergrad_nonmales, undergrad_nonmales$Employment != "currently_employed"))
+
+
+
+undergrad_employed_ztest <- prop.test(c(31509, 2319), c(34855,2547))
+undergrad_employed_ztest
 ```
+```{r, two sample z test for masters}
+# We first subset into the different education levels, here masters
+masters <- subset(df_clean, df_clean$EdLevel == "Master")
 
+
+# For the two sample z test, we need our two samples, males and nonmales
+masters_male <- subset(masters, masters$Gender == "Man") # Sample 1, males
+
+masters_male_employed <- subset(masters_male, masters_male$Employment == "currently_employed")
+# undergrad_male_nonemployed <- subset(undergrad_male, undergrad_male$Employment != "currently_employed")
+
+
+masters_nonmales <- subset(masters, undergrad$Gender != "Man") # Sample 2, females and nonbinary
+
+masters_nonmales_employed <- (subset(masters_nonmales, masters_nonmales$Employment == "currently_employed"))
+# undergrad_nonmales_nonemployed <- (subset(undergrad_nonmales, undergrad_nonmales$Employment != "currently_employed"))
+
+
+
+masters_employed_ztest <- prop.test(c(15447, 1105), c(17579,2547))
+masters_employed_ztest
+```
