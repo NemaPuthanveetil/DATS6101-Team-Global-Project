@@ -303,6 +303,20 @@ phd_employed_ztest
 
 ```{r, Chi square}
 # GOF: dep is categorical, independent x variable is two samples
+# We first want to create a contingency table to determine whether classification of age is significant in determining whether an individual is a professional developer or not
+
+# We need four categories: <35, NotDev; >35, NotDev; <35 Dev; >35 Dev
+notDev_under35 <- subset(df_final, df_final$Age == "<35" & df_final$MainBranch == "NotDev")
+notDev_over35 <- subset(df_final, df_final$Age == ">35" & df_final$MainBranch == "NotDev")
+dev_under35 <- subset(df_final, df_final$Age == "<35" & df_final$MainBranch == "Dev")
+dev_over35 <- subset(df_final, df_final$Age == ">35" & df_final$MainBranch == "Dev")
+
+# Now we conduct a chi square test of independence
+
+chisq_matrix <- matrix(c(22686,44710,2957,3109), nrow = 2, ncol = 2)
+
+chitest = chisq.test(chisq_matrix)
+chitest
 ```
 
 ```{r, two sample z test for means}
