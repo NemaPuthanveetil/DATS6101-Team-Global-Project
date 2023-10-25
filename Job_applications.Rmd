@@ -313,7 +313,11 @@ summary(anovaRes)
 
 ```{r, Post Hoc Tukey's Test}
 # Since we have a highly significant p-value based on our ANOVA test above, we want to conduct a Post Hoc analysis of the test using Tukey's method
+tukeyRes <- TukeyHSD(anovaRes)
+tukeyRes
 ```
+
+The Undergraduate, Master, and PhD groups had significantly different computer skills when compared to the Other group, with all of them having lower skills (given the negative "diff" values) and p-values less than 0.05.
 
 ```{r, Chi square}
 # GOF: dep is categorical, independent x variable is two samples
@@ -333,5 +337,19 @@ chitest = chisq.test(chisq_matrix)
 chitest
 ```
 
-```{r, two sample z test for means}
+```{r, two sample t-test for means}
+# Subset the PreviousSalary for individuals with 'Yes' and 'No' in the MentalHealth column
+salary_yes <- df_final$PreviousSalary[df_final$MentalHealth == "Yes"]
+salary_no <- df_final$PreviousSalary[df_final$MentalHealth == "No"]
+
+# Checking the mean of both groups just to get an idea
+format(mean(salary_yes, na.rm = TRUE), digits=5)
+format(mean(salary_no, na.rm = TRUE), digits=5)
+
+# Now we conduct a two-sample t-test on PreviousSalary between the two groups
+ttest_2sample_salary_yes_no <- t.test(salary_yes, salary_no)
+ttest_2sample_salary_yes_no
+
 ```
+
+Individuals who responded "Yes" for mental health issues had a significantly higher previous salary, with a range of $7,993 to $8,936 more than those individuals who responded "No".
