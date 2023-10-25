@@ -24,6 +24,8 @@ Team Global project on Job Applications Data
 library(ggplot2)
 library(tidyr)
 library(dplyr)
+library(ezids)
+
 ```
 
 
@@ -117,26 +119,42 @@ head(df_final)
 
 ```
 
+```{r}
+
+df_final %>%
+separate_rows(HaveWorkedWith, sep = ";") %>% 
+group_by(HaveWorkedWith) %>%
+summarise(Count = n()) %>%
+arrange(desc(Count))
+```
+
 
 ## EDA
+
+
+```{r}
+library(DataExplorer)
+DataExplorer::create_report(df)
+```
 
 ```{r}
 # Create a list of the columns that we use in combined boxplot
 columns_to_plot <- c("YearsCode", "YearsCodePro", "PreviousSalary", "Employed", "ComputerSkills")
 
 # Create a boxplot for each column and store it in a list
-boxplots <- lapply(df_final[columns_to_plot], boxplot, main = "Combined Boxplot")
+boxplots <- lapply(df[columns_to_plot], boxplot, main = "Combined Boxplot", col="brown")
 
 # Set up the plotting area to display all boxplots together
 par(mfrow = c(1, length(columns_to_plot)))
 
 # Display the boxplots
 for (i in 1:length(boxplots)) {
-  boxplot(df_final[[columns_to_plot[i]]], main = columns_to_plot[i])
+  boxplot(df[[columns_to_plot[i]]], main = columns_to_plot[i],col = "lightblue")
 }
 
 # plotting area layout
 par(mfrow = c(1, 1))
+
 ```
 
 
@@ -149,7 +167,7 @@ par(mfrow = c(1, length(columns_to_plot)))
 
 # Create and display boxplots without outliers
 for (col in columns_to_plot) {
-  boxplot(df_final[[col]], main = col, outline = FALSE)
+  boxplot(df[[col]], main = col, outline = FALSE, col="navy")
 }
 
 # plotting area layout
@@ -207,15 +225,6 @@ ggplot(data = plotdata, aes(x = MentalHealth, y = mean_prevsalary)) +
 ```
 
 
-```{r}
-
-df_final %>%
-separate_rows(HaveWorkedWith, sep = ";") %>% 
-group_by(HaveWorkedWith) %>%
-summarise(Count = n()) %>%
-arrange(desc(Count))
-```
-
 
 Because we have over 73,000 data points, we can use statistical methods that apply to data satisfying normality conditions (because of the central limit theorem).
 
@@ -269,8 +278,8 @@ masters_nonmales_employed <- (subset(masters_nonmales, masters_nonmales$Employme
 
 masters_employed_ztest <- prop.test(c(15447, 1105), c(17579,2547))
 masters_employed_ztest
-```
 
+```
 
 
 ```{r, two sample z test for PhD}
@@ -295,12 +304,33 @@ phd_nonmales_employed <- (subset(phd_nonmales, phd_nonmales$Employment == "curre
 phd_employed_ztest <- prop.test(c(2153, 185), c(2402,206))
 phd_employed_ztest
 ```
+
+
 ```{r, ANOVA test}
-# dep is quantitative and more than 3 independent categories
+anovaRes = aov(ComputerSkills ~ EdLevel, data=df_final)
+summary(anovaRes)
+```
+
+```{r, Post Hoc Tukey's Test}
+# Since we have a highly significant p-value based on our ANOVA test above, we want to conduct a Post Hoc analysis of the test using Tukey's method
 ```
 
 ```{r, Chi square}
 # GOF: dep is categorical, independent x variable is two samples
+# We first want to create a contingency table to determine whether classification of age is significant in determining whether an individual is a professional developer or not
+
+# We need four categories: <35, NotDev; >35, NotDev; <35 Dev; >35 Dev
+notDev_under35 <- subset(df_final, df_final$Age == "<35" & df_final$MainBranch == "NotDev")
+notDev_over35 <- subset(df_final, df_final$Age == ">35" & df_final$MainBranch == "NotDev")
+dev_under35 <- subset(df_final, df_final$Age == "<35" & df_final$MainBranch == "Dev")
+dev_over35 <- subset(df_final, df_final$Age == ">35" & df_final$MainBranch == "Dev")
+
+# Now we conduct a chi square test of independence
+
+chisq_matrix <- matrix(c(22686,44710,2957,3109), nrow = 2, ncol = 2)
+
+chitest = chisq.test(chisq_matrix)
+chitest
 ```
 
 ```{r, two sample z test for means}
