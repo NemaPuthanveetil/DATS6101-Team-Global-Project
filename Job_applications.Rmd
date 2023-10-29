@@ -25,7 +25,9 @@ library(ggplot2)
 library(tidyr)
 library(dplyr)
 library(ezids)
-
+library(gganimate)
+library(png)
+library(gifski)
 ```
 
 
@@ -119,14 +121,6 @@ head(df_final)
 
 ```
 
-```{r}
-
-df_final %>%
-separate_rows(HaveWorkedWith, sep = ";") %>% 
-group_by(HaveWorkedWith) %>%
-summarise(Count = n()) %>%
-arrange(desc(Count))
-```
 
 
 ## EDA
@@ -176,28 +170,28 @@ par(mfrow = c(1, 1))
 
 ```{r}
 # Creating a map of responses by country
-ggplot(data = df_final, aes(map_id = Country)) +
-  geom_map(aes(fill = Age), map = world_map) +
-  expand_limits(x = world_map$long, y = world_map$lat)
-
+#ggplot(data = df_final, aes(map_id = Country)) +
+#  geom_map(aes(fill = Age), map = world_map) +
+#  expand_limits(x = world_map$long, y = world_map$lat)
+# error in knitting- world map not found, so commenting this and the below chunks
 ```
 
 ```{r}
-ggplot(data = df_final, aes(map_id = Country)) +
-  geom_map(aes(fill = MentalHealth), map = world_map) +
-  expand_limits(x = world_map$long, y = world_map$lat)
+#ggplot(data = df_final, aes(map_id = Country)) +
+#  geom_map(aes(fill = MentalHealth), map = world_map) +
+#  expand_limits(x = world_map$long, y = world_map$lat)
 ```
 
 ```{r}
-ggplot(data = df_final, aes(map_id = Country)) +
-  geom_map(aes(fill = EdLevel), map = world_map) +
-  expand_limits(x = world_map$long, y = world_map$lat)
+#ggplot(data = df_final, aes(map_id = Country)) +
+#  geom_map(aes(fill = EdLevel), map = world_map) +
+#  expand_limits(x = world_map$long, y = world_map$lat)
 ```
 
 ```{r}
-ggplot(data = df_final, aes(map_id = Country)) +
-  geom_map(aes(fill = Employment), map = world_map) +
-  expand_limits(x = world_map$long, y = world_map$lat)
+#ggplot(data = df_final, aes(map_id = Country)) +
+#  geom_map(aes(fill = Employment), map = world_map) +
+#  expand_limits(x = world_map$long, y = world_map$lat)
 ```
 
 
@@ -245,11 +239,92 @@ plotdata <- df_final %>%
   summarize(mean_prevsalary = mean(PreviousSalary))
 
 ggplot(data = plotdata, aes(x = MentalHealth, y = mean_prevsalary)) +
-  geom_bar(stat = 'identity', alpha = 0.5) +
+  geom_bar(stat = 'identity', alpha = 0.5, aes(fill = MentalHealth)) +
   labs(title = "Mean Previous Salary by Mental Health", x = 'Mental Health', y="Previous Salary")
 
 ```
 
+
+```{r}
+
+df_final %>%
+separate_rows(HaveWorkedWith, sep = ";") %>% 
+group_by(HaveWorkedWith) %>%
+summarise(Count = n()) %>%
+arrange(desc(Count)) -> skills_df
+head(skills_df, 10)
+```
+
+We see that Javascript, Docker and HTML/CSS are the skills known by majority of the applicants.
+
+```{r plot- Top 10 skills known}
+
+plot <- ggplot(data = head(skills_df, 10), aes(x = reorder(HaveWorkedWith, Count), y = Count)) + 
+  geom_bar(stat = 'identity', aes(fill = HaveWorkedWith), alpha = 0.6) + 
+  coord_flip() + 
+  theme(axis.text.x = element_blank(),
+        axis.line = element_blank(),
+        axis.ticks = element_blank(),
+        panel.background = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.grid.major.x = element_line(size = 0.1, color = "grey"),
+        panel.grid.minor.x = element_line(size = 0.1, color = "grey"),
+        plot.background = element_blank()) + 
+  geom_text(aes(y = Count, label = Count)) +
+  labs(title = "Skills used by number of applicants", 
+       x = "Skill", y = "No. of applicants possessing the skill")
+
+anim <- plot + 
+    transition_states(HaveWorkedWith, transition_length = 4, wrap = FALSE) + 
+  shadow_mark() + 
+  enter_grow() +
+  enter_fade() + 
+  ease_aes('sine-in')
+  
+animate(anim)
+anim_save("Skills.gif", anim)
+```
+
+Now Lets see the skills that make the most money
+
+```{r plot- Highest earning skills}
+
+df_final %>%
+separate_rows(HaveWorkedWith, sep = ";") %>% 
+group_by(HaveWorkedWith) -> skills_df2
+
+aggregate(skills_df2$PreviousSalary, by = list(skills_df2$HaveWorkedWith), FUN = sum) %>%
+arrange(desc(x)) -> skills_df2
+colnames(skills_df2) <- c('Skills', 'TotalEarning')
+
+
+plot <- ggplot(data = head(skills_df2, 10), aes(x = reorder(Skills, TotalEarning), y = TotalEarning)) + 
+  geom_bar(stat = 'identity', aes(fill = Skills), alpha = 0.6) + 
+  coord_flip() + 
+  theme(axis.text.x = element_blank(),
+        axis.line = element_blank(),
+        axis.ticks = element_blank(),
+        panel.background = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.grid.major.x = element_line(size = 0.1, color = "grey"),
+        panel.grid.minor.x = element_line(size = 0.1, color = "grey"),
+        plot.background = element_blank()) + 
+  geom_text(aes(y = TotalEarning, label = paste(round(TotalEarning/1000000, 2), 'M'))) +
+  labs(title = "Top 10 earning skills", 
+       x = "Skill", y = "Total earnings")
+
+anim <- plot + 
+    transition_states(Skills, transition_length = 4, wrap = FALSE) + 
+  shadow_mark() + 
+  enter_grow() +
+  enter_fade() + 
+  ease_aes('sine-in')
+  
+animate(anim)
+anim_save("SkillsEarnings.gif", anim)
+```
 
 
 Because we have over 73,000 data points, we can use statistical methods that apply to data satisfying normality conditions (because of the central limit theorem).
@@ -337,7 +412,7 @@ anovaRes = aov(ComputerSkills ~ EdLevel, data=df_final)
 summary(anovaRes)
 ```
 
-```{r, Post Hoc Tukey's Test}
+```{r, Post Hoc Tukey Test}
 # Since we have a highly significant p-value based on our ANOVA test above, we want to conduct a Post Hoc analysis of the test using Tukey's method
 tukeyRes <- TukeyHSD(anovaRes)
 tukeyRes
