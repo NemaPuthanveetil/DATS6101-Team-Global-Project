@@ -114,13 +114,79 @@ length(unique(df_clean$Country))
 
 There are 172 different countries. (Leaving this as it is for the time being)
 
+Let's see if there is data where their professional coding experience is more than their coding experience. If there is such data, we have to remove it because that's practically faulty data.
+
+```{r remove faulty data}
+
+nrow(subset(df_clean, subset = df_clean$YearsCode<df_clean$YearsCodePro))
+# We observe 588 such records
+df_clean = subset(df_clean, subset = df_clean$YearsCode>df_clean$YearsCodePro)
+
+```
+
+Let's take a look at some plots and distribution in order to deal with outliers.
+
+```{r outlier detection}
+# Create a list of the columns that we use in combined boxplot
+columns_to_plot <- c("YearsCode", "YearsCodePro", "PreviousSalary", "ComputerSkills")
+
+# Set up the plotting area to display all boxplots together
+par(mfrow = c(2, length(columns_to_plot)))
+
+# Display the boxplots
+for (i in 1:length(columns_to_plot)) {
+  boxplot(df_clean[[columns_to_plot[i]]], main = columns_to_plot[i],col = "lightblue")
+}
+for (i in 1:length(columns_to_plot)) {
+  hist(df_clean[[columns_to_plot[i]]], main = columns_to_plot[i], xlab = element_blank(), col = "lightblue")
+}
+# plotting area layout
+par(mfrow = c(2, 1))
+
+```
+So we notice that, all these are right skewed distributions with quite a bit of outliers. All the outliers are on the higher end. Let's check the crictical value for these outliers.
+
+```{r quantiles}
+o_code= quantile(df_clean$YearsCode, probs = 0.75, na.rm = FALSE) + 
+  (1.5 * IQR(df_clean$YearsCode))
+o_procode = quantile(df_clean$YearsCodePro, probs = 0.75, na.rm = FALSE) + 
+  (1.5 * IQR(df_clean$YearsCodePro))
+o_presal = quantile(df_clean$PreviousSalary, probs = 0.75, na.rm = FALSE) + 
+  (1.5 * IQR(df_clean$PreviousSalary))
+o_cskill = quantile(df_clean$ComputerSkills, probs = 0.75, na.rm = FALSE) + 
+  (1.5 * IQR(df_clean$ComputerSkills))
+
+print(paste(o_code, o_procode, o_presal, o_cskill))
+```
+So, as per the IQR method, for it to be an outlier we get:
+
+* 39.5 years of coding experience
+* 25.5 years of professional coding experience
+* 193596 as the previous salary
+* 30.5 as the number of computer skills
+
+Someone can have 25.5+ years of professional coding experience. So, it doesn't make sense to remove everything above this value. A good approximation would be 40 years. So we'll consider anyone who has above 40 years of coding and professional coding experience as an outlier and thus remove such observations.
+
+31 computer skills is quite a lot for some, not so much for others. So let's go with ahigher approximation of 35 to remove outliers for this.
+
+1 lac 93k seems a good critical value for an outlier, but since we do not know the currency of salary, let's not remove the higher salary values. There could be people who had an extremely high salary. This scenario isn't unlikely in our world.
+
+```{r outlier removal}
+df_clean = subset(df_clean, subset = df_clean$YearsCode < 40)
+df_clean = subset(df_clean, subset = df_clean$YearsCodePro < 40)
+df_clean = subset(df_clean, subset = df_clean$ComputerSkills < 35)
+```
+
+
+
 Lets take a look at the data now:
 ```{r final data}
 df_final <- df_clean
 head(df_final)
 
-```
+print(paste("Number of records in final data:", nrow(df_final)))
 
+```
 
 
 ## EDA
@@ -128,45 +194,9 @@ head(df_final)
 
 ```{r}
 library(DataExplorer)
-DataExplorer::create_report(df)
+#DataExplorer::create_report(df)
 ```
 
-```{r}
-# Create a list of the columns that we use in combined boxplot
-columns_to_plot <- c("YearsCode", "YearsCodePro", "PreviousSalary", "Employed", "ComputerSkills")
-
-# Create a boxplot for each column and store it in a list
-boxplots <- lapply(df[columns_to_plot], boxplot, main = "Combined Boxplot", col="brown")
-
-# Set up the plotting area to display all boxplots together
-par(mfrow = c(1, length(columns_to_plot)))
-
-# Display the boxplots
-for (i in 1:length(boxplots)) {
-  boxplot(df[[columns_to_plot[i]]], main = columns_to_plot[i],col = "lightblue")
-}
-
-# plotting area layout
-par(mfrow = c(1, 1))
-
-```
-
-
-```{r}
-#  list of the columns that we use in combined boxplot
-columns_to_plot <- c("YearsCode", "YearsCodePro", "PreviousSalary", "Employed", "ComputerSkills")
-
-# display all boxplots together
-par(mfrow = c(1, length(columns_to_plot)))
-
-# Create and display boxplots without outliers
-for (col in columns_to_plot) {
-  boxplot(df[[col]], main = col, outline = FALSE, col="navy")
-}
-
-# plotting area layout
-par(mfrow = c(1, 1))
-```
 
 ```{r}
 # Creating a map of responses by country
@@ -283,7 +313,7 @@ anim <- plot +
   ease_aes('sine-in')
   
 animate(anim)
-anim_save("Skills.gif", anim)
+#anim_save("Skills.gif", anim)
 ```
 
 Now Lets see the skills that make the most money
@@ -323,11 +353,11 @@ anim <- plot +
   ease_aes('sine-in')
   
 animate(anim)
-anim_save("SkillsEarnings.gif", anim)
+#anim_save("SkillsEarnings.gif", anim)
 ```
 
 
-Because we have over 73,000 data points, we can use statistical methods that apply to data satisfying normality conditions (because of the central limit theorem).
+Because we have over 65,000 data points, we can use statistical methods that apply to data satisfying normality conditions (because of the central limit theorem).
 
 MAKE SURE TO INCLUDE TEST ASSUMPTIONS
 
