@@ -20,6 +20,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Importing Libraries & Data
 Team Global project on Job Applications Data
+
 ```{r Libraries}
 library(ggplot2)
 library(tidyr)
@@ -39,6 +40,7 @@ head(df)
 #structure of a data frame 
 str(df) 
 ```
+
 The dataframe has 73462 records. We have index, employemnt, yearscode, yearscodepro and previoussalary as integer type and the rest are of character types. Going ahead we would need to convert some of them to factors.
 
 ## Data preprocessing & Cleaning
@@ -80,6 +82,7 @@ df_clean$Employed[df_clean$Employed == "0"] <- "not_hired"
 df_clean$Employed = factor(df_clean$Employed)
 str(df_clean)
 ```
+
 Now let's take a look at the character columns.
 
 ```{r char columns}
@@ -107,7 +110,7 @@ str(df_clean)
 
 Let's check the number of different countries we have.
 
-```{r}
+```{r country}
 length(unique(df_clean$Country))
 
 ```
@@ -144,6 +147,7 @@ for (i in 1:length(columns_to_plot)) {
 par(mfrow = c(2, 1))
 
 ```
+
 So we notice that, all these are right skewed distributions with quite a bit of outliers. All the outliers are on the higher end. Let's check the crictical value for these outliers.
 
 ```{r quantiles}
@@ -158,6 +162,7 @@ o_cskill = quantile(df_clean$ComputerSkills, probs = 0.75, na.rm = FALSE) +
 
 print(paste(o_code, o_procode, o_presal, o_cskill))
 ```
+
 So, as per the IQR method, for it to be an outlier we get:
 
 * 39.5 years of coding experience
@@ -178,8 +183,8 @@ df_clean = subset(df_clean, subset = df_clean$ComputerSkills < 35)
 ```
 
 
-
 Lets take a look at the data now:
+
 ```{r final data}
 df_final <- df_clean
 head(df_final)
@@ -275,7 +280,7 @@ ggplot(data = plotdata, aes(x = MentalHealth, y = mean_prevsalary)) +
 ```
 
 
-```{r}
+```{r skills extraction}
 
 df_final %>%
 separate_rows(HaveWorkedWith, sep = ";") %>% 
