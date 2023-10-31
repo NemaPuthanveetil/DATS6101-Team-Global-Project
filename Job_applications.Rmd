@@ -29,6 +29,7 @@ library(ezids)
 library(gganimate)
 library(png)
 library(gifski)
+library(gridExtra)
 ```
 
 
