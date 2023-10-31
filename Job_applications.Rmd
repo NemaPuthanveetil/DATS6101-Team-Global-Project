@@ -160,7 +160,6 @@ df_clean = subset(df_clean, subset = df_clean$YearsCode>df_clean$YearsCodePro)
 
 
 
-```
 ```{r Basic Statistics}
 
 # Getting the number of rows and columns
