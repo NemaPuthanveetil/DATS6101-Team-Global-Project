@@ -158,6 +158,48 @@ df_clean = subset(df_clean, subset = df_clean$YearsCode>df_clean$YearsCodePro)
 
 ```
 
+
+
+```
+```{r Basic Statistics}
+
+# Getting the number of rows and columns
+num_rows <- dim(df)[1]
+num_columns <- dim(df)[2]
+
+# Getting the number of discrete and continuous columns
+discrete_columns <- sum(sapply(df, is.factor))
+continuous_columns <- sum(sapply(df, is.numeric))
+
+# Checking for missing values
+missing_columns <- sum(colSums(is.na(df)) > 0)
+missing_observations <- sum(rowSums(is.na(df)) > 0)
+
+# Getting the number of complete rows
+complete_rows <- sum(complete.cases(df))
+
+# Calculating the total number of observations
+total_observations <- num_rows * num_columns
+
+# Memory allocation
+memory_allocation <- format(object.size(df), units = "Mb")
+
+# Displaying the information
+cat("Basic Statistics and Raw Counts for the Dataset:\n")
+cat("Rows:", num_rows, "\n")
+cat("Columns:", num_columns, "\n")
+cat("Discrete columns:", discrete_columns, "\n")
+cat("Continuous columns:", continuous_columns, "\n")
+cat("All missing columns:", missing_columns, "\n")
+cat("Missing observations:", missing_observations, "\n")
+cat("Complete Rows:", complete_rows, "\n")
+cat("Total observations:", total_observations, "\n")
+cat("Memory allocation:", format(memory_allocation, units = "auto"), "\n")
+
+```
+
+
+
 Let's take a look at some plots and distribution in order to deal with outliers.
 
 ```{r outlier detection}
