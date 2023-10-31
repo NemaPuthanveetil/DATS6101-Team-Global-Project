@@ -199,6 +199,49 @@ cat("Memory allocation:", format(memory_allocation, units = "auto"), "\n")
 ```
 
 
+```{r Basic Statistics Plots}
+
+
+# Creating a data frame for plotting
+data <- data.frame(statistic = stat_labels, count = statistics)
+
+# Making "statistic" a factor variable
+data$statistic <- factor(data$statistic, levels = stat_labels)
+
+# defining the colors
+stat_colors <- c(
+  "Rows" = "skyblue",
+  "All missing columns" = "green",
+  "Missing observations" = "blue",
+  "Complete Rows" = "red",
+  "Total observations" = "yellow"
+)
+
+# Remove the rows 
+data <- data[!(data$statistic %in% c("Columns", "Discrete columns", "Continuous columns")), ]
+
+# Creating a bar plot 
+p <- ggplot(data, aes(x = count, y = statistic, fill = statistic, label = "")) +
+  geom_bar(stat = "identity", width = 0.7) +
+  labs(title = "Basic Statistics and Raw Counts",
+       x = "Count", y = "Statistic") +
+  theme_minimal() +
+  scale_fill_manual(values = stat_colors) +
+  guides(fill = guide_legend(override.aes = list(color = "black"), title = "Count"))
+
+
+p <- p + geom_point(data = data[data$count == 0, ], aes(x = 0, y = statistic), color = "black", size = 3)
+
+# Creating the table for percentages
+table_df <- data.frame(statistic = data$statistic, percentage = paste0(round((data$count / sum(data$count)) * 100, 2), "%"))
+table <- tableGrob(table_df, rows = NULL)
+
+# Arranging the plot
+grid.arrange(p, table, ncol = 1, heights = c(4, 1))
+
+
+```
+
 
 Let's take a look at some plots and distribution in order to deal with outliers.
 
