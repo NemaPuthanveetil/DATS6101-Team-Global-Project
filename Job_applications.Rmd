@@ -18,10 +18,12 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Importing Libraries & Data
+## 1. Import Libraries
 Team Global project on Job Applications Data
 
 ```{r Libraries}
+# uncomment and run the below line to install the required packages
+#install.packages(c("gganimate", "png", "gifski"))
 library(ggplot2)
 library(tidyr)
 library(dplyr)
@@ -31,10 +33,11 @@ library(png)
 library(gifski)
 ```
 
+## 2. Import Data
 
 ```{r Import_data}
 df = data.frame(read.csv('stackoverflow_full.csv', header = TRUE))
-head(df)
+xkabledplyhead(df)
 ```
 ```{r Structure}
 #structure of a data frame 
@@ -43,7 +46,7 @@ str(df)
 
 The dataframe has 73462 records. We have index, employemnt, yearscode, yearscodepro and previoussalary as integer type and the rest are of character types. Going ahead we would need to convert some of them to factors.
 
-## Data preprocessing & Cleaning
+## 3. Data preprocessing & Cleaning
 
 Let's first check for missing values and duplicate values if any.
 
@@ -106,7 +109,7 @@ df_clean$MainBranch = factor(df_clean$MainBranch)
 str(df_clean)
 ```
 
-*"Other" for now is set to be the lowest level. Ideally it should not be excluded from the levels. But there are about 10000 observations with "other", hence we cannot drop so many rows*
+*"Other" for now is set to be the lowest level. Ideally it should be excluded from the ranking of the levels. But there are about 10000 observations with "other", hence we cannot drop so many rows*
 
 Let's check the number of different countries we have.
 
@@ -172,9 +175,9 @@ So, as per the IQR method, for it to be an outlier we get:
 
 Someone can have 25.5+ years of professional coding experience. So, it doesn't make sense to remove everything above this value. A good approximation would be 40 years. So we'll consider anyone who has above 40 years of coding and professional coding experience as an outlier and thus remove such observations.
 
-31 computer skills is quite a lot for some, not so much for others. So let's go with ahigher approximation of 35 to remove outliers for this.
+31 computer skills is quite a lot for some, not so much for others. So let's go with a higher approximation of 35 to remove outliers for this.
 
-1 lac 93k seems a good critical value for an outlier, but since we do not know the currency of salary, let's not remove the higher salary values. There could be people who had an extremely high salary. This scenario isn't unlikely in our world.
+193k seems a good critical value for an outlier, but since we do not know the currency of salary, let's not remove the higher salary values. There could be people who had an extremely high salary. This scenario isn't unlikely in our world.
 
 ```{r outlier removal}
 df_clean = subset(df_clean, subset = df_clean$YearsCode < 40)
@@ -194,7 +197,7 @@ print(paste("Number of records in final data:", nrow(df_final)))
 ```
 
 
-## EDA
+## 4. EDA
 
 
 ```{r}
@@ -366,7 +369,7 @@ Because we have over 65,000 data points, we can use statistical methods that app
 
 MAKE SURE TO INCLUDE TEST ASSUMPTIONS
 
-## Hypotheses Testing
+## 5. Hypotheses Testing
 
 We first want to check whether there is a difference in the number of males vs non-males employed at every level of education.
 ```{r, two sample z test for undergraduate for proportions}
