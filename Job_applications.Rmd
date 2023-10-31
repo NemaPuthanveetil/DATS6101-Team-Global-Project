@@ -357,28 +357,28 @@ custom_colors <- c("skyblue", "pink", "orange", "purple", "green")
 
 ```{r}
 # Creating a map of responses by country
-#ggplot(data = df_final, aes(map_id = Country)) +
-#  geom_map(aes(fill = Age), map = world_map) +
-#  expand_limits(x = world_map$long, y = world_map$lat)
-# error in knitting- world map not found, so commenting this and the below chunks
+ggplot(data = df_final, aes(map_id = Country)) +
+  geom_map(aes(fill = Age), map = world_map) +
+  expand_limits(x = world_map$long, y = world_map$lat)
+
 ```
 
 ```{r}
-#ggplot(data = df_final, aes(map_id = Country)) +
-#  geom_map(aes(fill = MentalHealth), map = world_map) +
-#  expand_limits(x = world_map$long, y = world_map$lat)
+ggplot(data = df_final, aes(map_id = Country)) +
+  geom_map(aes(fill = MentalHealth), map = world_map) +
+  expand_limits(x = world_map$long, y = world_map$lat)
 ```
 
 ```{r}
-#ggplot(data = df_final, aes(map_id = Country)) +
-#  geom_map(aes(fill = EdLevel), map = world_map) +
-#  expand_limits(x = world_map$long, y = world_map$lat)
+ggplot(data = df_final, aes(map_id = Country)) +
+  geom_map(aes(fill = EdLevel), map = world_map) +
+  expand_limits(x = world_map$long, y = world_map$lat)
 ```
 
 ```{r}
-#ggplot(data = df_final, aes(map_id = Country)) +
-#  geom_map(aes(fill = Employment), map = world_map) +
-#  expand_limits(x = world_map$long, y = world_map$lat)
+ggplot(data = df_final, aes(map_id = Country)) +
+  geom_map(aes(fill = Employment), map = world_map) +
+  expand_limits(x = world_map$long, y = world_map$lat)
 ```
 
 
