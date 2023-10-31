@@ -53,6 +53,36 @@ Let's first check for missing values and duplicate values if any.
 print(colSums(is.na(df)))
 ```
 
+```{r missing values plot}
+
+box_color <- "black"
+bg_color <- "lightblue"
+
+# Checking for missing values
+missing_data <- data.frame(
+  Variable = names(df),
+  Missing_Values = sapply(df, function(x) sum(is.na(x)))
+)
+
+# Creating a bar plot to visualize missing values 
+plot <- ggplot(missing_data, aes(x = Variable, y = Missing_Values)) +
+  geom_bar(stat = "identity", fill = bar_color) +
+  labs(title = "Missing Values in the Dataset",
+       x = "Variables",
+       y = "Number of Missing Values") +
+  theme_minimal() +  # Change the background to gray
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.background = element_rect(fill = bg_color))
+
+plot <- plot + geom_boxplot(aes(y = Missing_Values), fill = box_color)
+
+plot <- plot + scale_y_continuous(breaks = seq(0, max(missing_data$Missing_Values), by = 1))
+
+# plot
+print(plot)
+```
+
+
 ```{r duplicates}
 # Check duplicates
 length(unique(df$Index))
