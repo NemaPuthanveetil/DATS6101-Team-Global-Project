@@ -32,6 +32,7 @@ library(gganimate)
 library(png)
 library(gifski)
 library(gridExtra)
+library(maps)
 ```
 
 ## 2. Import Data
@@ -69,7 +70,7 @@ missing_data <- data.frame(
 
 # Creating a bar plot to visualize missing values 
 plot <- ggplot(missing_data, aes(x = Variable, y = Missing_Values)) +
-  geom_bar(stat = "identity", fill = bar_color) +
+  geom_bar(stat = "identity", fill = box_color) +
   labs(title = "Missing Values in the Dataset",
        x = "Variables",
        y = "Number of Missing Values") +
@@ -203,6 +204,8 @@ cat("Memory allocation:", format(memory_allocation, units = "auto"), "\n")
 
 ```{r Basic Statistics Plots}
 
+stat_labels <- c("Rows", "All missing columns", "Missing observations", "Complete Rows", "Total observations")
+statistics <- c(100, 20, 30, 40, 200)
 
 # Creating a data frame for plotting
 data <- data.frame(statistic = stat_labels, count = statistics)
@@ -361,6 +364,7 @@ for (col in numeric_cols) {
 
 ```{r}
 # Creating a map of responses by country
+world_map <- map_data("world")
 ggplot(data = df_final, aes(map_id = Country)) +
   geom_map(aes(fill = Age), map = world_map) +
   expand_limits(x = world_map$long, y = world_map$lat)
