@@ -18,8 +18,9 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+# Team Global project on Job Applicants Data
 ## 1. Import Libraries
-Team Global project on Job Applications Data
+
 
 ```{r Libraries}
 # uncomment and run the below line to install the required packages
@@ -31,22 +32,21 @@ library(ezids)
 library(gganimate)
 library(png)
 library(gifski)
-library(gridExtra)
-library(maps)
+
 ```
 
 ## 2. Import Data
 
 ```{r Import_data}
 df = data.frame(read.csv('stackoverflow_full.csv', header = TRUE))
-xkabledplyhead(df)
+xkabledplyhead(df, title = "Job Applicants Data")
 ```
 ```{r Structure}
 #structure of a data frame 
 str(df) 
 ```
 
-The dataframe has 73462 records. We have index, employemnt, yearscode, yearscodepro and previoussalary as integer type and the rest are of character types. Going ahead we would need to convert some of them to factors.
+The dataframe has 73462 records. We have `index`, `employemnt`, `yearscode`, `yearscodepro` and `previoussalary` as integer type and the rest are of character types. Going ahead we would need to convert some of them to factors.
 
 ## 3. Data preprocessing & Cleaning
 
@@ -57,41 +57,12 @@ Let's first check for missing values and duplicate values if any.
 print(colSums(is.na(df)))
 ```
 
-Here we checks the number of unique values in the "Index" column of the dataframe "df" to identify duplicates.
-
 
 ```{r duplicates}
 # Check duplicates
 length(unique(df$Index))
 ```
 
-In this we  provided basic dataset statistics, including row and column counts, the number of discrete and continuous columns, and memory allocation information.
-
-```{r Basic Statistics}
-
-# Getting the number of rows and columns
-num_rows <- dim(df)[1]
-num_columns <- dim(df)[2]
-
-# Getting the number of discrete and continuous columns
-continuous_columns <- sum(sapply(df, is.numeric))
-
-# Getting the number of complete rows
-complete_rows <- sum(complete.cases(df))
-
-# Calculating the total number of observations
-total_observations <- num_rows * num_columns
-
-
-# Displaying the information
-cat("Basic Statistics and Raw Counts for the Dataset:\n")
-cat("Rows:", num_rows, "\n")
-cat("Columns:", num_columns, "\n")
-cat("Continuous columns:", continuous_columns, "\n")
-cat("Complete Rows:", complete_rows, "\n")
-cat("Total observations:", total_observations, "\n")
-```
- 
 We notice that there are no missing values and duplicates in the data. So, we have all the observations to work with.
 
 Now that we know this, let us do some cleaning and feature engineering. First we'll extract the numeric columns.
@@ -101,9 +72,6 @@ Now that we know this, let us do some cleaning and feature engineering. First we
 head(subset(df, select = c(names(df)[sapply(df, is.numeric)])))
 ```
 
-* The index column will not be required, so we will drop it (We can use the in-built index of a dataframe).
-* We will convert employment into factor and change the values for a better sense.
-* We will do the same for employed
 
 ```{r numeric feature cleaning}
 df_clean <- subset(df, select = -c(Index))
@@ -126,10 +94,6 @@ head(subset(df_clean, select = c(names(df)[sapply(df, is.character)])))
 
 ```
 
-* Except Country and Haveworkedwith, the rest are clearly categorical features, so we will convert them to factor data type
-* Edlevel is an ordinal feature 
-
-
 ```{r char feature cleaning}
 df_clean$Age = factor(df_clean$Age)
 df_clean$Accessibility = factor(df_clean$Accessibility)
@@ -141,7 +105,6 @@ df_clean$MainBranch = factor(df_clean$MainBranch)
 str(df_clean)
 ```
 
-*"Other" for now is set to be the lowest level. Ideally it should be excluded from the ranking of the levels. But there are about 10000 observations with "other", hence we cannot drop so many rows*
 
 Let's check the number of different countries we have.
 
@@ -184,8 +147,6 @@ par(mfrow = c(2, 1))
 
 ```
 
-So we notice that, all these are right skewed distributions with quite a bit of outliers. All the outliers are on the higher end. Let's check the crictical value for these outliers.
-
 ```{r quantiles}
 o_code= quantile(df_clean$YearsCode, probs = 0.75, na.rm = FALSE) + 
   (1.5 * IQR(df_clean$YearsCode))
@@ -199,19 +160,6 @@ o_cskill = quantile(df_clean$ComputerSkills, probs = 0.75, na.rm = FALSE) +
 print(paste(o_code, o_procode, o_presal, o_cskill))
 ```
 
-So, as per the IQR method, for it to be an outlier we get:
-
-* 39.5 years of coding experience
-* 25.5 years of professional coding experience
-* 193596 as the previous salary
-* 30.5 as the number of computer skills
-
-Someone can have 25.5+ years of professional coding experience. So, it doesn't make sense to remove everything above this value. A good approximation would be 40 years. So we'll consider anyone who has above 40 years of coding and professional coding experience as an outlier and thus remove such observations.
-
-31 computer skills is quite a lot for some, not so much for others. So let's go with a higher approximation of 35 to remove outliers for this.
-
-193k seems a good critical value for an outlier, but since we do not know the currency of salary, let's not remove the higher salary values. There could be people who had an extremely high salary. This scenario isn't unlikely in our world.
-
 ```{r outlier removal}
 df_clean = subset(df_clean, subset = df_clean$YearsCode < 40)
 df_clean = subset(df_clean, subset = df_clean$YearsCodePro < 40)
@@ -219,55 +167,35 @@ df_clean = subset(df_clean, subset = df_clean$ComputerSkills < 35)
 ```
 
 
-Lets take a look at the data now:
+Lets take a look at the final data now:
 
 ```{r final data}
 df_final <- df_clean
-head(df_final)
-
-print(paste("Number of records in final data:", nrow(df_final)))
+xkabledplyhead(df_final, title = "Final Data")
 
 ```
 
+```{r Final Data Basic Info}
+
+# Getting the number of categorical and numerical columns
+cat_cols <- colnames(subset(df_final, select = c(names(df_final)[(sapply(df_final, is.factor)) | 
+                                                       (sapply(df_final, is.ordered)) | 
+                                                       (sapply(df_final, is.character))])))
+
+num_cols <- colnames(subset(df_final, select = c(names(df_final)[sapply(df_final, is.integer)])))
+
+# Displaying the information
+cat("Basic summary and Raw Counts for the Dataset:\n")
+cat("Rows:", dim(df_final)[1], "\n")
+cat("Columns:", dim(df_final)[2], "\n")
+cat("Numerical columns:", num_cols, "\n")
+cat("Categorical Columns:", cat_cols, "\n")
+
+```
 
 ## 4. EDA
 
-Here we created a map plot of data from the "df_final" dataset, where countries are identified by "Country," and "Age" values are represented by colors on the map.
-
-```{r}
-# Creating a map of responses by country
-world_map <- map_data("world")
-ggplot(data = df_final, aes(map_id = Country)) +
-  geom_map(aes(fill = Age), map = world_map) +
-  expand_limits(x = world_map$long, y = world_map$lat)
-
-```
-
-Here we created a world map plot using data from the "df_final" dataset. Countries are mapped by "Country," and "MentalHealth" values are visualized using fill colors.
-
-```{r}
-ggplot(data = df_final, aes(map_id = Country)) +
-  geom_map(aes(fill = MentalHealth), map = world_map) +
-  expand_limits(x = world_map$long, y = world_map$lat)
-```
-
-Here we created a world map plot with data from the "df_final" dataset. "Country" identifies countries, and "EdLevel" values are represented with fill colors on the map.
-
-
-```{r}
-ggplot(data = df_final, aes(map_id = Country)) +
-  geom_map(aes(fill = EdLevel), map = world_map) +
-  expand_limits(x = world_map$long, y = world_map$lat)
-```
-
-Here we generated a world map plot based on data from the "df_final" dataset. The map represents countries by "Country," and "Employment" values are depicted using fill colors on the map.
-
-```{r}
-ggplot(data = df_final, aes(map_id = Country)) +
-  geom_map(aes(fill = Employment), map = world_map) +
-  expand_limits(x = world_map$long, y = world_map$lat)
-```
-
+Let's first try to get a good picture of the data which will act as the 1st step to answer the questions that we proposed.
 
 
 ```{r plot- Ed by Gender}
@@ -278,12 +206,14 @@ ggplot(data = subset(df_final, subset = Employed=='hired'), aes(EdLevel, after_s
 
 ```
 
+
 ```{r plot- Ed by Emp}
 ggplot(data = df_final, aes(EdLevel)) + 
   geom_bar(aes(fill = Employment), position = 'dodge', alpha = 0.5) +
   labs(title = "Education Level by Employment", x="Education Level", y="Count")
 
 ```
+
 
 ```{r plot- MainBranch by Age}
 ggplot(data = df_final, aes(MainBranch)) + 
@@ -292,12 +222,14 @@ ggplot(data = df_final, aes(MainBranch)) +
 
 ```
 
+
 ```{r plot- PrevSal by MentalHealth(1)}
 ggplot(data = df_final, aes(x = PreviousSalary, fill = MentalHealth)) +
   geom_density(alpha = 0.5) +
   labs(title = "Density plot of Previous Salary by Mental Health", x="Previous Salary", y= 'Density')
 
 ```
+
 
 ```{r plot- PrevSal by MentalHealth(2)}
 
@@ -317,10 +249,11 @@ ggplot(data = plotdata, aes(x = MentalHealth, y = mean_prevsalary)) +
   labs(title = "Mean Previous Salary by Mental Health", x = 'Mental Health', y="Previous Salary")
 
 ```
+We notice that the mean previous salary of applicants having mental health issues is higher.
 
-Here we splits the "HaveWorkedWith" column by ";" in the `df_final` dataset. It then groups the resulting data by the skill "HaveWorkedWith," calculates the count of each skill, arranges them in descending order, and stores the top 10 most common skills in the `skills_df` data frame.
 
-
+Let's try digging a bit deeper into the data to get additional insights.
+Let's try to extract the most used skill-
 ```{r skills extraction}
 
 df_final %>%
@@ -331,7 +264,7 @@ arrange(desc(Count)) -> skills_df
 head(skills_df, 10)
 ```
 
-We see that Javascript, Docker and HTML/CSS are the skills known by majority of the applicants.
+We see that Javascript, Docker and HTML/CSS are the skills known by majority of the applicants. Let's visualize it to have a better look.
 
 ```{r plot- Top 10 skills known}
 
@@ -361,51 +294,8 @@ anim <- plot +
 animate(anim)
 #anim_save("Skills.gif", anim)
 ```
-
-Now Lets see the skills that make the most money
-
-```{r plot- Highest earning skills}
-
-df_final %>%
-separate_rows(HaveWorkedWith, sep = ";") %>% 
-group_by(HaveWorkedWith) -> skills_df2
-
-aggregate(skills_df2$PreviousSalary, by = list(skills_df2$HaveWorkedWith), FUN = sum) %>%
-arrange(desc(x)) -> skills_df2
-colnames(skills_df2) <- c('Skills', 'TotalEarning')
-
-
-plot <- ggplot(data = head(skills_df2, 10), aes(x = reorder(Skills, TotalEarning), y = TotalEarning)) + 
-  geom_bar(stat = 'identity', aes(fill = Skills), alpha = 0.6) + 
-  coord_flip() + 
-  theme(axis.text.x = element_blank(),
-        axis.line = element_blank(),
-        axis.ticks = element_blank(),
-        panel.background = element_blank(),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.grid.major.x = element_line(size = 0.1, color = "grey"),
-        panel.grid.minor.x = element_line(size = 0.1, color = "grey"),
-        plot.background = element_blank()) + 
-  geom_text(aes(y = TotalEarning, label = paste(round(TotalEarning/1000000, 2), 'M'))) +
-  labs(title = "Top 10 earning skills", 
-       x = "Skill", y = "Total earnings")
-
-anim <- plot + 
-    transition_states(Skills, transition_length = 4, wrap = FALSE) + 
-  shadow_mark() + 
-  enter_grow() +
-  enter_fade() + 
-  ease_aes('sine-in')
-  
-animate(anim)
-#anim_save("SkillsEarnings.gif", anim)
-```
-
-
 Because we have over 65,000 data points, we can use statistical methods that apply to data satisfying normality conditions (because of the central limit theorem).
 
-MAKE SURE TO INCLUDE TEST ASSUMPTIONS
 
 ## 5. Hypothesis Testing
 
@@ -619,12 +509,3 @@ Our t test statistic is `r ttest_2sample_salary_yes_no$statistic` with p-value `
 
 This shows that those acknowledging mental health issues earned between $7,141 to $8,973 more than those who didn't. This suggests that a higher salary often carries added responsibilities, leading to stress and potential mental health challenges. Companies and HR teams can use this insight to monitor employee well-being. Job seekers should also be aware that higher salaries might come with increased mental health considerations, aiding them in making informed decisions.
 
-## 6. Conclusions/Key Takeaways
-
-## 7. Limitations
-
-The dataset mainly covers the tech industry and has more males from Stack Overflow, so it might not fully represent the wider job market. It would have been better if we had details on soft skills, cultural fit, and specific job roles. There are more men than women in the data. Without currency details for 'PreviousSalary', it's hard to compare salaries. Also, since age is grouped and not exact, it's less detailed.
-
-## 8. Further Research
-
-For the future, we have two main suggestions. First, we recommend doing an EEPEN analysis to look more closely at specific things like age or where someone is from. This will give us clearer ideas about those areas. Second, we think it's a good idea to use the data to make models that can guess if someone will get a job. As we learn more, we can make these models better.
