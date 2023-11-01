@@ -105,7 +105,7 @@ cat("Memory allocation:", format(memory_allocation, units = "auto"), "\n")
 ```
 In this we  provided basic dataset statistics, including row and column counts, the number of discrete and continuous columns, and memory allocation information.
 
-```{r Structure2}
+```{r Structure}
 
 
 num_rows <- dim(df)[1]
