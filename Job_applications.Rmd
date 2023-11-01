@@ -74,12 +74,7 @@ num_rows <- dim(df)[1]
 num_columns <- dim(df)[2]
 
 # Getting the number of discrete and continuous columns
-discrete_columns <- sum(sapply(df, is.factor))
 continuous_columns <- sum(sapply(df, is.numeric))
-
-# Checking for missing values
-missing_columns <- sum(colSums(is.na(df)) > 0)
-missing_observations <- sum(rowSums(is.na(df)) > 0)
 
 # Getting the number of complete rows
 complete_rows <- sum(complete.cases(df))
@@ -87,60 +82,16 @@ complete_rows <- sum(complete.cases(df))
 # Calculating the total number of observations
 total_observations <- num_rows * num_columns
 
-# Memory allocation
-memory_allocation <- format(object.size(df), units = "Mb")
 
 # Displaying the information
 cat("Basic Statistics and Raw Counts for the Dataset:\n")
 cat("Rows:", num_rows, "\n")
 cat("Columns:", num_columns, "\n")
-cat("Discrete columns:", discrete_columns, "\n")
 cat("Continuous columns:", continuous_columns, "\n")
-cat("All missing columns:", missing_columns, "\n")
-cat("Missing observations:", missing_observations, "\n")
 cat("Complete Rows:", complete_rows, "\n")
 cat("Total observations:", total_observations, "\n")
-cat("Memory allocation:", format(memory_allocation, units = "auto"), "\n")
-
 ```
-In this we  provided basic dataset statistics, including row and column counts, the number of discrete and continuous columns, and memory allocation information.
-
-```{r Structure}
-
-
-num_rows <- dim(df)[1]
-num_columns <- dim(df)[2]
-
-discrete_columns <- sum(sapply(df, is.factor))
-continuous_columns <- sum(sapply(df, is.numeric))
-
-missing_columns <- sum(colSums(is.na(df)) > 0)
-missing_observations <- sum(rowSums(is.na(df)) > 0)
-
-complete_rows <- sum(complete.cases(df))
-
-total_observations <- num_rows * num_columns
-
-statistics <- data.frame(
-  Statistic = c("Rows", "Columns", "Discrete Columns", "Missing Observations", "Total Observations"),
-  Count = c(num_rows, num_columns, discrete_columns, missing_observations, total_observations)
-)
-
-statistics$Percentage <- (statistics$Count / sum(statistics$Count)) * 100
-
-bar_plot <- ggplot(statistics, aes(x = Statistic, y = Percentage)) +
-  geom_bar(stat = "identity", width = 0.7, fill = "skyblue") +
-  geom_text(aes(label = paste0(Percentage, "%")), vjust = -0.5, size = 4) +
-  labs(title = "Percentage Breakdown of Dataset Statistics",
-       x = "Statistic", y = "Percentage") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-print(bar_plot)
-
  
-```
-
 We notice that there are no missing values and duplicates in the data. So, we have all the observations to work with.
 
 Now that we know this, let us do some cleaning and feature engineering. First we'll extract the numeric columns.
@@ -280,52 +231,6 @@ print(paste("Number of records in final data:", nrow(df_final)))
 
 
 ## 4. EDA
-
-Here the `DataExplorer::create_report(df)` function generates a comprehensive exploratory data analysis (EDA) report for a given dataset (`df`). This report includes summary statistics, data visualizations, missing value analysis, and other insights to help users understand and preprocess their data effectively.
-
-```{r}
-library(DataExplorer)
-#DataExplorer::create_report(df)
-```
-
-Here We identify numeric columns in the dataset, created a directory to save histogram plots, and generates histograms for each numeric column. We uses custom colors for the histograms and saves them as individual PNG files in the specified directory for visualizing the data distribution.
-
-```{r }
-
-
-#names of numeric columns
-numeric_cols <- sapply(df, is.numeric)
-numeric_cols <- names(df)[numeric_cols]
-
-# Creating a directory to save the plots
-output_dir <- "numerical_histograms"
-dir.create(output_dir, showWarnings = FALSE)
-
-
-custom_colors <- c("skyblue", "pink", "orange", "purple", "green")
-
-# Looping through the numerical columns and create histograms
-for (col in numeric_cols) {
-  color_index <- match(col, numeric_cols) %% length(custom_colors) + 1
-  fill_color <- custom_colors[color_index]
-
-  # Creating a histogram
-  hist_plot <- ggplot(df, aes(x = .data[[col]]) ) +
-    geom_histogram(fill = fill_color, color = "darkblue", bins = 20) +
-    labs(title = paste("Histogram of", col),
-         x = col,
-         y = "Frequency") +
-    theme_minimal()
-
-  
-  hist_output_file <- file.path(output_dir, paste0("histogram_", col, ".png"))
-  ggsave(filename = hist_output_file, plot = hist_plot, width = 6, height = 4)
-
-  print(hist_plot)
-}
-
-
-```
 
 Here we created a map plot of data from the "df_final" dataset, where countries are identified by "Country," and "Age" values are represented by colors on the map.
 
