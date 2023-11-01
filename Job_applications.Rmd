@@ -105,7 +105,7 @@ cat("Memory allocation:", format(memory_allocation, units = "auto"), "\n")
 ```
 In this we  provided basic dataset statistics, including row and column counts, the number of discrete and continuous columns, and memory allocation information.
 
-```{r Structure}
+```{r Structure2}
 
 
 num_rows <- dim(df)[1]
@@ -502,30 +502,26 @@ Because we have over 65,000 data points, we can use statistical methods that app
 
 MAKE SURE TO INCLUDE TEST ASSUMPTIONS
 
-## Hypothesis Testing ##
+## 5. Hypothesis Testing
 
 ### Test 1: Is there a significant difference between employed males and non-males in their respective education levels?
 
-MAKE SURE TO INCLUDE TEST ASSUMPTIONS
-
 We first want to check whether there is a difference in the number of males vs non-males employed at every level of education.
 
-Because we have over 73,000 data points, we may use statistical methods that apply to data satisfying normality conditions (because of the central limit theorem).
+Because we have over 65,000 data points, we may use statistical methods that apply to data satisfying normality conditions (because of the central limit theorem).
 
 Hence, we use a series of two sample z tests to conduct our first set hypothesis tests.
 
 The assumptions we need to satisfy are:
-_
-_
-_
-_
+- Large sample size\
+- Data are collected as a simple random sample (so that observations are independent from one another)
 
 We first want to look at the individuals with a bachelor's degree.
 $H_0:$ There is no difference in the number of undergraduate males who are employed when compared to nonmales
 $H_a:$ There is a significant difference in the number of undergraduate males who are employed when compared to nonmales
 ```{r, two sample z test for proportions: undergraduate}
 # We first subset into the different education levels, here undergraduate
-undergrad <- subset(df_final, df_final$EdLevel == "Undergraduate")
+undergrad <- subset(df_clean, df_clean$EdLevel == "Undergraduate")
 
 
 # For the two sample z test, we need our two samples, males and nonmales
@@ -538,27 +534,21 @@ undergrad_nonmales <- subset(undergrad, undergrad$Gender != "Man") # Sample 2, f
 undergrad_nonmales_employed <- (subset(undergrad_nonmales, undergrad_nonmales$Employment == "currently_employed"))
 
 
-undergrad_employed_ztest <- prop.test(c(31509, 2319), c(34855,2547))
+undergrad_employed_ztest <- prop.test(c(nrow(undergrad_male_employed), nrow(undergrad_nonmales_employed)), c(nrow(undergrad_male),nrow(undergrad_nonmales)))
 undergrad_employed_ztest
-
-cat("The proportion of undergraduate males who are employed is:", nrow(undergrad_male_employed)/nrow(undergrad_male), "\n")
-cat("The proportion of undergraduate nonmales who are employed is:", nrow(undergrad_nonmales_employed)/nrow(undergrad_nonmales), "\n")
-cat("Our two sample z test statistic is:", undergrad_employed_ztest$statistic, "which has an associated p-value of", undergrad_employed_ztest$p.value, ".\n")
-cat("At and alpha-level of .05 we fail to reject the null hypothesis and conclude that there is not a significant difference in the number of males vs nonmales who have a bachelor's degree and are employed.")
 ```
-
-The proportion of undergraduate males who are employed is: 
-The proportion of undergraduate nonmales who are employed is:
-Our two sample z test statistic is: _ which has an associated p-value of _.
+The proportion of undergraduate males who are employed is: `r nrow(undergrad_male_employed)`/`r nrow(undergrad_male)`\
+The proportion of undergraduate nonmales who are employed is: `r nrow(undergrad_nonmales_employed)`/`r nrow(undergrad_nonmales)`\
+Our two sample z test statistic is: `r undergrad_employed_ztest$statistic` which has an associated p-value of `r undergrad_employed_ztest$p.value`.\
 At and alpha-level of .05 we fail to reject the null hypothesis and conclude that there is not a significant difference in the number of males vs nonmales who have a bachelor's degree and are employed.
 
 We now look at individuals with a masters.
 $H_0:$ There is no difference in the number of males with a master's degree who are employed when compared to nonmales
 $H_a:$ There is a significant difference in the number of males with a master's degree who are employed when compared to nonmales
 
-```{r, two sample z test for proportions: master's}
+```{r, two sample z test for proportions: masters}
 # We first subset into the different education levels, here masters
-masters <- subset(df_final, df_final$EdLevel == "Master")
+masters <- subset(df_clean, df_clean$EdLevel == "Master")
 
 
 # For the two sample z test, we need our two samples, males and nonmales
@@ -572,18 +562,13 @@ masters_nonmales <- subset(masters, undergrad$Gender != "Man") # Sample 2, femal
 masters_nonmales_employed <- (subset(masters_nonmales, masters_nonmales$Employment == "currently_employed"))
 
 
-masters_employed_ztest <- prop.test(c(15447, 1105), c(17579,2547))
+masters_employed_ztest <- prop.test(c(nrow(masters_male_employed), nrow(masters_nonmales_employed)), c(nrow(masters_male),nrow(masters_nonmales)))
 masters_employed_ztest
 
-cat("The proportion of males with a Masters who are employed is:", nrow(masters_male_employed)/nrow(masters_male), "\n")
-cat("The proportion of nonmales with a Masters who are employed is:", nrow(masters_nonmales_employed)/nrow(masters_nonmales), "\n")
-cat("Our two sample z test statistic is:", masters_employed_ztest$statistic, "which has an associated p-value of", masters_employed_ztest$p.value, ".\n")
-cat("At and alpha-level of .05 we reject the null hypothesis and conclude that there is a significant difference in the number of males vs nonmales who have a master's degree and are employed.")
 ```
-
-The proportion of males with a master's who are employed is: 
-The proportion of nonmales with a master's who are employed is:
-Our two sample z test statistic is: _ which has an associated p-value of _.
+The proportion of males with a master's who are employed is: `r nrow(masters_male_employed)`/`r nrow(masters_male)`\
+The proportion of nonmales with a master's who are employed is: `r nrow(masters_nonmales_employed)`/`r nrow(masters_nonmales)`\
+Our two sample z test statistic is: `r masters_employed_ztest$statistic` which has an associated p-value of `r masters_employed_ztest$p.value`.\
 At and alpha-level of .05 we reject the null hypothesis and conclude that there is a significant difference in the number of males vs nonmales who have a master's degree and are employed.
 
 Finally, we examine individuals who have a doctorate degree.
@@ -591,7 +576,7 @@ $H_0:$ There is no difference in the number of males with a PhD who are employed
 $H_a:$ There is a significant difference in the number of males with a PhDwho are employed when compared to nonmales
 ```{r, two sample z test for proportions: Phd}
 # We first subset into the different education levels, here PhD
-phd <- subset(df_final, df_final$EdLevel == "PhD")
+phd <- subset(df_clean, df_clean$EdLevel == "PhD")
 
 
 # For the two sample z test, we need our two samples, males and nonmales
@@ -604,22 +589,13 @@ phd_nonmales <- subset(phd, phd$Gender != "Man") # Sample 2, females and nonbina
 phd_nonmales_employed <- (subset(phd_nonmales, phd_nonmales$Employment == "currently_employed"))
 
 
-phd_employed_ztest <- prop.test(c(2153, 185), c(2402,206))
+phd_employed_ztest <- prop.test(c(nrow(phd_male_employed), nrow(phd_nonmales_employed)), c(nrow(phd_male),nrow(phd_nonmales)))
 phd_employed_ztest
-
-# Printing the results using cat
-cat("The proportion of males with a PhD who are employed is:", nrow(phd_male_employed)/nrow(phd_male), "\n")
-cat("The proportion of nonmales with a PhD who are employed is:", nrow(phd_nonmales_employed)/nrow(phd_nonmales), "\n")
-cat("Our two sample z test statistic is:", phd_employed_ztest$statistic, "which has an associated p-value of", phd_employed_ztest$p.value, ".\n")
-cat("At an alpha-level of .05 we fail to reject the null hypothesis and conclude that there is not a significant difference in the number of males vs nonmales who have a doctorate degree and are employed.")
 ```
-
-The proportion of males with a PhD who are employed is: 
-The proportion of nonmales with a PhD who are employed is:
-Our two sample z test statistic is: _ which has an associated p-value of _.
+The proportion of males with a master's who are employed is: `r nrow(phd_male_employed)`/`r nrow(phd_male)`\
+The proportion of nonmales with a master's who are employed is: `r nrow(phd_nonmales_employed)`/`r nrow(phd_nonmales)`\
+Our two sample z test statistic is: `r phd_employed_ztest$statistic` which has an associated p-value of `r phd_employed_ztest$p.value`.\
 At and alpha-level of .05 we fail to reject the null hypothesis and conclude that there is not a significant difference in the number of males vs nonmales who have a doctorate degree and are employed.
-
-[real world conclusion]
 
 In real-world scenarios, these results might suggest that, in certain employment contexts, master's education appears to be a distinguishing factor between males and non-males. This could reflect societal or industry biases, or possibly differing educational or career choices among genders. Companies keen on diversity might want to address such disparities in their recruitment and mentorship programs, ensuring opportunities aren't skewed by gender-based educational trends.
 
@@ -627,13 +603,14 @@ In real-world scenarios, these results might suggest that, in certain employment
 Since we the number of known computer skills is continuous and we have more than two categories for level of education, we would like to conduct an ANOVA test to answer this question.
 
 The assumptions we need to satisfy are:
-_
-_
+- All 5 groups are normally distributed\
+- Homogeneity of variances\
+- Error terms are independent of each other
 
 Let's first visualize the question we are trying to answer by examining the boxplots for distribution of computer skills at all education levels.
 ```{r, ANOVA boxplots}
 loadPkg("ggplot2")
-ggplot(df_final, aes(x=EdLevel, y=ComputerSkills)) + 
+ggplot(df_clean, aes(x=EdLevel, y=ComputerSkills)) + 
   geom_boxplot( colour=c("#ff0000","#FFFF00", "#11cc11","#0000ff","#ff00ff"), alpha = .5, outlier.shape=8, outlier.size=4) +
   labs(x="Education Level", y = "Number of Computer Skills")
 ```
@@ -644,102 +621,82 @@ $H_0:$: There is no significant difference in the average number of computer ski
 $H_a:$ At least one education level group differs from the others in the average number of computer skills known.
 
 ```{r, ANOVA test}
-anovaRes = aov(ComputerSkills ~ EdLevel, data=df_final)
+anovaRes = aov(ComputerSkills ~ EdLevel, data=df_clean)
 anovaSummary = summary(anovaRes)
 anovaSummary
 
-# Extracting F value and p-value for the EdLevel effect
-F_value = anovaSummary[[1]]["EdLevel", "F value"]
-p_value = anovaSummary[[1]]["EdLevel", "Pr(>F)"]
-
 # Extracting mean computer skills for each education level
-mean_skills_NoHigherEd = mean(subset(df_final, EdLevel == "NoHigherEd")$ComputerSkills)
-mean_skills_Undergraduate = mean(subset(df_final, EdLevel == "Undergraduate")$ComputerSkills)
-mean_skills_Master = mean(subset(df_final, EdLevel == "Master")$ComputerSkills)
-mean_skills_PhD = mean(subset(df_final, EdLevel == "PhD")$ComputerSkills)
-mean_skills_Other = mean(subset(df_final, EdLevel == "Other")$ComputerSkills)
-
-cat("The average number of computer skills for\n",
-    "No Higher Ed:", mean_skills_NoHigherEd, "\n",
-    "Undergraduate:", mean_skills_Undergraduate, "\n",
-    "Master's:", mean_skills_Master, "\n",
-    "PhD:", mean_skills_PhD, "\n",
-    "Other:", mean_skills_Other, "\n",
-    "Our ANOVA F test statistic is", F_value, "with p-value", p_value, ". At an alpha-level of .05, we reject the null hypothesis. We conclude that there is at least one education level for which the average number of computer skills is different from the other groups.\n")
-
+mean_skills_Other = mean(subset(df_clean, EdLevel == "Other")$ComputerSkills)
+mean_skills_NoHigherEd = mean(subset(df_clean, EdLevel == "NoHigherEd")$ComputerSkills)
+mean_skills_Undergraduate = mean(subset(df_clean, EdLevel == "Undergraduate")$ComputerSkills)
+mean_skills_Master = mean(subset(df_clean, EdLevel == "Master")$ComputerSkills)
+mean_skills_PhD = mean(subset(df_clean, EdLevel == "PhD")$ComputerSkills)
 ```
-
-The average number of computer skills for
-No Higher Ed: _
-Undergraduate: _
-Master's: _
-PhD: _
-Other: _
-Our ANOVA F test statistic is _ with p-value _. At an alpha-level of .05, we reject the null hypothesis. We conclude that there is at least one education level for which the average number of computer skills is different from the other groups.
+The average number of computer skills for\
+Other: `r mean_skills_Other`\
+No Higher Ed: `r mean_skills_NoHigherEd`\
+Undergraduate: `r mean_skills_Undergraduate`\
+Master's: `r mean_skills_Master`\
+PhD: `r mean_skills_PhD`\
+Our ANOVA F test statistic is 281.8 with p-value <2e-16. At an alpha-level of .05, we reject the null hypothesis. We conclude that there is at least one education level for which the average number of computer skills is different from the other groups.
 
 Since we have a highly significant p-value based on our ANOVA test above, we want to conduct a Post Hoc analysis of the test using the standard method, Tukey's HSD test.
-```{r, Post Hoc Tukey's Test}
+```{r, Post Hoc Tukeys Test}
 tukeyRes <- TukeyHSD(anovaRes)
 tukeyRes
 ```
 
-_ The Undergraduate, Master, and PhD groups had significantly different computer skills when compared to the Other group, with all of them having lower skills (given the negative "diff" values) and p-values less than 0.05.
+Since all p-values for every pairwise comparison was less than 0.05, we conclude that the average number of computer skills for every education level was significantly different from every other level of education.
 
 [real world conclusion; we could look at specific averages to determine which levels of education provide less or more computer skills i.e. quality vs quantity]
 
 In real-world terms, this suggests that as one progresses through higher levels of education, from no higher education to a PhD, there is a substantial increase in computer skills. For employers in the technical field, this could mean that candidates with advanced degrees might bring a higher level of expertise and proficiency in computer-related tasks. However, it's also essential to consider the quality versus quantity aspect: while a higher degree might indicate more extensive knowledge, it does not necessarily guarantee the quality or applicability of that knowledge in specific job roles.
 
 ### Test 3: Is age a significant factor in determining whether an individual is a professional developer or not?
-
 Now, since age is a continuous variable and the classification for professional development a categorical one, we would like to use a Chi square test of independence to determine whether the two variables are associated.
 
 The assumptions we need to satisfy are:
-_
-_
+- The data were drawn as a simple random sample\
+- All expected counts are greater than 5
 
 $H_0:$ Whether an individual is a professional developer or not is independent of their age.
 $H_a:$ Age and status of being a professional developer are associated with each other.
 ```{r, Chi square}
 # We need four categories: <35, NotDev; >35, NotDev; <35 Dev; >35 Dev
-notDev_under35 <- subset(df_final, df_final$Age == "<35" & df_final$MainBranch == "NotDev")
-notDev_over35 <- subset(df_final, df_final$Age == ">35" & df_final$MainBranch == "NotDev")
-dev_under35 <- subset(df_final, df_final$Age == "<35" & df_final$MainBranch == "Dev")
-dev_over35 <- subset(df_final, df_final$Age == ">35" & df_final$MainBranch == "Dev")
-
-# Now we conduct a chi square test of independence
-chisq_matrix <- matrix(c(22686,44710,2957,3109), nrow = 2, ncol = 2)
+notDev_under35 <- subset(df_clean, df_clean$Age == "<35" & df_clean$MainBranch == "NotDev")
+notDev_over35 <- subset(df_clean, df_clean$Age == ">35" & df_clean$MainBranch == "NotDev")
+dev_under35 <- subset(df_clean, df_clean$Age == "<35" & df_clean$MainBranch == "Dev")
+dev_over35 <- subset(df_clean, df_clean$Age == ">35" & df_clean$MainBranch == "Dev")
 ```
 
 The contingency table that we perform our chi square test on is the following:
 ```{r, Chi square table}
-chisq_matrix <- matrix(c(22686,44710,2957,3109), nrow = 2, ncol = 2)
+chisq_matrix <- matrix(c(nrow(dev_over35),nrow(dev_under35),nrow(notDev_over35),nrow(notDev_under35)), nrow = 2, ncol = 2)
 
+# Now we conduct a chi square test of independence
 chitest = chisq.test(chisq_matrix)
 chitest
-
-cat("Our chi square test statistic is", chitest$statistic, "with p-value", chitest$p.value, ". At an alpha-level of .05 we reject the null hypothesis.")
 ```
-
-Our chi square test statistic is _ with p-value _. At an alpha-level of .05 we _ the null hypothesis. We conclude that age and being a professional developer are _ associated.
-
-We conclude that age and being a professional developer are _ associated.
-Examining the results, it's clear that age significantly influences whether an individual is a professional developer or not.
+Our chi square test statistic is `r chitest$statistic` with p-value `r chitest$p.value`. At an alpha-level of .05 we reject the null hypothesis. We conclude that age and being a professional developer are associated.
 
 This data might imply that certain age groups are more inclined or better positioned to pursue developer careers. For educational institutions, this insight can guide curriculum planning, targeting age groups that are more likely to transition into professional development.
 
-### Does mental health influence previous salary?
+### Test 4: Does mental health influence previous salary?
 To answer our final question, we conduct a two sample t test to compare the mean salary between those with and without mental health issues. (We use a t test as opposed to its normal counterpart, a z test, even though we have a large sample, size since the population variance is unknown.)
 
 The assumptions we need to satisfy are:
-_
-_
+- The observations are independent of one another\
+- The data in each group were take from a simple random sample\
+- The data are relatively normally distributed
+- The data is continuous in nature\
+- Homogeneity of variances
 
 $H_0:$ Whether an individual is a professional developer or not is independent of their age.
 $H_a:$ Age and status of being a professional developer are associated with each other.
 ```{r, two sample t-test for means}
 # Subset the PreviousSalary for individuals with 'Yes' and 'No' in the MentalHealth column
-salary_yes <- df_final$PreviousSalary[df_final$MentalHealth == "Yes"]
-salary_no <- df_final$PreviousSalary[df_final$MentalHealth == "No"]
+salary_yes <- df_clean$PreviousSalary[df_clean$MentalHealth == "Yes"]
+salary_no <- df_clean$PreviousSalary[df_clean$MentalHealth == "No"]
 
 # Checking the mean of both groups just to get an idea
 format(mean(salary_yes, na.rm = TRUE), digits=5)
@@ -749,21 +706,20 @@ format(mean(salary_no, na.rm = TRUE), digits=5)
 ttest_2sample_salary_yes_no <- t.test(salary_yes, salary_no)
 ttest_2sample_salary_yes_no
 
-t_statistic = ttest_2sample_salary_yes_no$statistic
-p_val = ttest_2sample_salary_yes_no$p.value
-
-# Forming the final statement
-cat("Our t-test statistic is", t_statistic, "with p-value", p_val, ".\n")
-cat("At an alpha-level of .05, we reject the null hypothesis.\n")
 ```
+The average salary for those who responded\ 
+'yes' to having mental health issues: $72,709.47\
+'no' to having mental health issues: $64,652.15\
+Our t test statistic is `r ttest_2sample_salary_yes_no$statistic` with p-value `r ttest_2sample_salary_yes_no$p.value`. At an alpha-level of .05 we reject the null hypothesis. We conclude that the mean salary of those with mental health issues is significantly different (in this case, higher) than those without.
 
-Our t test statistic is _ with p-value _. At an alpha-level of .05 we _ the null hypothesis. We conclude that the mean salary of those with mental health issues is _ than those without.
+This shows that those acknowledging mental health issues earned between $7,141 to $8,973 more than those who didn't. This suggests that a higher salary often carries added responsibilities, leading to stress and potential mental health challenges. Companies and HR teams can use this insight to monitor employee well-being. Job seekers should also be aware that higher salaries might come with increased mental health considerations, aiding them in making informed decisions.
 
-This shows that those acknowledging mental health issues earned between $7,993 to $8,936 more than those who didn't. This suggests that a higher salary often carries added responsibilities, leading to stress and potential mental health challenges. Companies and HR teams can use this insight to monitor employee well-being. Job seekers should also be aware that higher salaries might come with increased mental health considerations, aiding them in making informed decisions.
+## 6. Conclusions/Key Takeaways
 
+## 7. Limitations
 
-## Conclusions/Key Takeaways
+The dataset mainly covers the tech industry and has more males from Stack Overflow, so it might not fully represent the wider job market. It would have been better if we had details on soft skills, cultural fit, and specific job roles. There are more men than women in the data. Without currency details for 'PreviousSalary', it's hard to compare salaries. Also, since age is grouped and not exact, it's less detailed.
 
-## Limitations
+## 8. Further Research
 
-## Further Research
+For the future, we have two main suggestions. First, we recommend doing an EEPEN analysis to look more closely at specific things like age or where someone is from. This will give us clearer ideas about those areas. Second, we think it's a good idea to use the data to make models that can guess if someone will get a job. As we learn more, we can make these models better.
