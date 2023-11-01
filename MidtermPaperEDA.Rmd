@@ -1,0 +1,464 @@
+---
+title: "Team_Global_Summary_Paper"
+authors: "Sajan Kumar Kar, Neelima Puthanveetil, Sandhya Karki, Saipavan Mekala"
+date: "2023-10-31"
+output:
+  html_document:
+    code_folding: hide
+    number_sections: false
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = F)
+```
+
+#  Team Global Midterm Project on Job Applications Data
+
+## 1. Introduction 
+
+In today’s highly competitive job market, organizations consistently strive to optimize their recruitment processes to discern the most qualified candidates for diverse employment opportunities. Conversely, job seekers are engaged in augmenting their skill sets, recognizing the pivotal role this plays in securing employment. Understanding the factors that boost employability and having an intricate idea of the know-how benefits both parties. The challenge lies in the diverse factors affecting the job market like age, education attainment, and technical proficiencies, among others. 
+
+## 2. Rationale for Topic Selection 
+
+Given the fluctuating nature of today's job market, both employers and job seekers face unique challenges. Recognizing the factors that affect employability and making data-driven decisions can bridge the gap between talent and opportunity. Numerous studies have addressed employability, yet gaps remain. This paper aims to build on the existing knowledge by providing a fresh perspective using a novel dataset. 
+
+## 3. Dataset Overview 
+
+
+The dataset titled "Employability Classification of Over 70,000 Job Applicants" was sourced from Stack Overflow and available on Kaggle. It comprises approximately 73,000 records, providing insights into various attributes such as age, education, technical proficiencies, and more. This dataset serves as a valuable resource for understanding employability dynamics in the technical and professional development fields. Fields in the original dataset include: 
+
+* **Id**: A general Id column 
+
+* **Age**: age of the applicant, >35 years old or <35 years old (categorical) 
+
+* **Accessibility**: No information (categorical) 
+
+* **EdLevel**: education level of the applicant (Undergraduate, Master, PhD…) (categorical) 
+
+* **Employment**: whether the applicant was employed (categorical) 
+
+* **MentalHealth**: whether the applicant had mental health issues (categorical) 
+
+* **Gender**: gender of the applicant, (Man, Woman, or NonBinary) (categorical) 
+
+* **MainBranch**: whether the applicant is a profesional developer (categorical) 
+
+* **YearsCode**: how long the applicant has been coding (integer) 
+
+* **YearsCodePro**: how long the applicant has been coding in a professional context, (integer) 
+
+* **Country**: Country of the applicant  
+
+* **PreviousSalary**: the applicant's previous job salary (float) 
+
+* **HaveWorkedWith**: skills the applicant has worked with. 
+
+* **ComputerSkills**: number of computer skills known by the applicant (integer) 
+
+* **Employed**: target variable, whether the applicant has been hired (categorical) 
+
+Here’s a view of how the dataset looks like:
+
+```{r }
+library(ezids)
+df = data.frame(read.csv('./Project/stackoverflow_full.csv', header = TRUE))
+xkabledplyhead(df, title = "Job Applicants Data")
+```
+ 
+
+ 
+
+## 4. Limitations of the Dataset 
+
+While the dataset is comprehensive, it predominantly focuses on the tech industry and individuals from Stack Overflow, which are mostly male audiences, and it may not be wholly representative of the broader job market. Additional information on soft skills, cultural fit, and detailed job roles might have added more depth to our analysis. The distribution of gender within the dataset displays a pronounced male predominance, with a notable imbalance in favor of males. The lack of currency information within the `PreviousSalary` variable hinders the establishment of a unified metric for measurement. Furthermore, the representation of age as a categorical variable offers limited insight into the precise age in years. 
+
+
+## 5. SMART Questions: 
+
+Our SMART questions arose from our preliminary understanding of the job market's challenges: 
+
+Is there a significant difference between employed males and non-males in their respective education levels? 
+
+Does education level significantly impact employment in the technical field? 
+
+Is age a significant factor in determining whether an individual is a professional developer or not? 
+
+Does mental health influence previous salary? 
+
+
+
+## 6. Exploratory Data Analysis (EDA) 
+
+### 6.1. Data exploration
+The dataset is found to have 73462 observations with no missing values or duplicates in any columns. It consists of some numerical and some categorical columns.
+
+The numerical columns are: 
+```{r numeric columns}
+# Extract the numeric columns
+colnames(subset(df, select = c(names(df)[sapply(df, is.numeric)])))
+```
+The categorical columns are:
+```{r char columns}
+# Extract the character columns
+colnames(subset(df, select = c(names(df)[sapply(df, is.character)])))
+
+```
+The categorical variables are of type character in the dataset. There are 172 countries and the skills in `HaveWorkedWith` column are mixed together.
+
+### 6.2. Data preprocessing & Cleaning
+
+In the context of this analysis, 
+* The `Index` column has been deemed unnecessary and subsequently removed. 
+* For enhanced readability, the categorical values within the `Employment` and `Employed` columns have been transformed into more interpretable representations. 
+* All character columns, with the exception of `Country` and `HaveWorkedWith` have been recast as factor variables. 
+* The `EdLevel` variable, indicative of education level, is treated as an ordinal variable. Notably, the value 'other' has been retained as the lowest ordinal rank due to a lack of specific information. In an ideal scenario, it would be omitted from the ordinal ranking of education levels.
+
+
+```{r preprocessing, echo=FALSE}
+df_clean <- subset(df, select = -c(Index))
+df_clean$Employment = as.character(df_clean$Employment)
+df_clean$Employment[df_clean$Employment == "1"] <- "currently_employed"
+df_clean$Employment[df_clean$Employment=="0"] <- "not_currently_employed"
+df_clean$Employment = factor(df_clean$Employment)
+df_clean$Employed = as.character(df_clean$Employed)
+df_clean$Employed[df_clean$Employed == "1"] <- "hired"
+df_clean$Employed[df_clean$Employed == "0"] <- "not_hired"
+df_clean$Employed = factor(df_clean$Employed)
+df_clean$Age = factor(df_clean$Age)
+df_clean$Accessibility = factor(df_clean$Accessibility)
+df_clean$EdLevel = factor(df_clean$EdLevel, ordered = T, 
+                          levels = c("Other", "NoHigherEd", "Undergraduate", "Master", "PhD"))
+df_clean$Gender = factor(df_clean$Gender)
+df_clean$MentalHealth = factor(df_clean$MentalHealth)
+df_clean$MainBranch = factor(df_clean$MainBranch)
+
+
+```
+
+It was checked if there was data where their professional coding experience was more than their coding experience. 588 such records were found, which had to be removed because of them clearly being faulty data.
+```{r remove faulty data}
+#nrow(subset(df_clean, subset = df_clean$YearsCode<df_clean$YearsCodePro))
+# We observe 588 such records
+df_clean = subset(df_clean, subset = df_clean$YearsCode>df_clean$YearsCodePro)
+```
+
+Subsequently, boxplots and histograms were employed to scrutinize the dataset for potential outliers and to assess the distribution characteristics of the variables.
+
+```{r outlier detection, echo=FALSE, warning=FALSE}
+library(ggplot2)
+library(tidyr)
+
+# Create a list of the columns that we use in combined boxplot
+columns_to_plot <- c("YearsCode", "YearsCodePro", "PreviousSalary", "ComputerSkills")
+
+# Set up the plotting area to display all boxplots together
+par(mfrow = c(2, length(columns_to_plot)))
+
+# Display the boxplots
+for (i in 1:length(columns_to_plot)) {
+  boxplot(df_clean[[columns_to_plot[i]]], main = columns_to_plot[i],col = "lightblue")
+}
+for (i in 1:length(columns_to_plot)) {
+  hist(df_clean[[columns_to_plot[i]]], main = columns_to_plot[i], xlab = element_blank(), col = "lightblue")
+}
+# plotting area layout
+par(mfrow = c(2, 1))
+
+```
+
+Evident were right-skewed distributions, accompanied by a notable presence of outlier data points. All the outliers were on the higher end. The detection and treatment of outliers involved the examination of values exceeding $Q3 + 1.5(IQR)$,  guided by domain-specific knowledge.
+
+So, as per the IQR method, for it to be an outlier we got:
+
+* 39.5 years of coding experience
+* 25.5 years of professional coding experience
+* 193596 as the previous salary
+* 30.5 as the number of computer skills
+
+Someone could have 25.5+ years of professional coding experience. So, it didn't make sense to remove everything above this value. A good approximation would be 40 years. So we considered anyone who has above 40 years of coding and professional coding experience as an outlier and thus removed such observations.
+
+31 computer skills is quite a lot for some, not so much for others. So we went with a higher approximation of 35 to remove outliers for this.
+
+193k seemed a good critical value for an outlier for previous salary, but since we are ignorant of the currency of salary, we did not remove the higher salary values. There could be people who had an extremely high salary. This scenario isn't unlikely in our world.
+
+```{r outlier removal, echo=FALSE}
+df_clean = subset(df_clean, subset = df_clean$YearsCode>df_clean$YearsCodePro)
+df_clean = subset(df_clean, subset = df_clean$YearsCode < 40)
+df_clean = subset(df_clean, subset = df_clean$YearsCodePro < 40)
+df_clean = subset(df_clean, subset = df_clean$ComputerSkills < 35)
+
+df_final <- df_clean
+# print(paste("Number of records in final data:", nrow(df_final)))
+```
+The final cleaned data has `r nrow(df_final)` observations.
+
+### 6.3. Visualizations
+
+Various visualizations were implemented to get a better look at the data and to get answers for the questions that we proposed.
+
+We observed that most applicants who are currently employed had undergraduate or master's level of education.
+
+```{r plot- Ed by Emp}
+ggplot(data = df_final, aes(EdLevel)) + 
+  geom_bar(aes(fill = Employment), position = 'dodge', alpha = 0.5) +
+  labs(title = "Education Level by Employment", x="Education Level", y="Count")
+
+```
+
+Going a step further, for all the employed workers, we see that majority are men who have undergraduate level education. Applicants with master's level of education come in second but there's a clear difference between the two. For genders 'NonBinary' and 'Woman' there are extremely few applicants comapred to 'Man'.
+
+```{r plot- Ed by Gender, echo=FALSE}
+
+ggplot(data = subset(df_final, subset = Employed=='hired'), aes(EdLevel, after_stat(count))) + 
+  geom_bar(aes(fill = Gender), position = 'dodge', alpha = 0.5) +
+  labs(title = "Education Level by gender for employed workers", x="Education Level", y="Count")
+
+```
+
+On comparing to find out the relation between age and being a professional developer, we observe that majority of developers are below 35 years of age and there is a clear distinction between number of developers who are above and below 35 years. There's not much of a difference in number of applicants with respect to age when it comes to non developers.
+
+```{r plot- MainBranch by Age}
+ggplot(data = df_final, aes(MainBranch)) + 
+  geom_bar(aes(fill = Age), position = 'dodge', alpha = 0.5) +
+  labs(title = "MainBranch by Age", x="MainBranch", y="Count")
+
+```
+
+On checking the previous salary of the applicant based on their mental health, interestingly, we found that those with mental health issues fall in the higher ranges of salary and those with no mental health issues fall in the lower ranges of salary.
+
+```{r plot- PrevSal by MentalHealth(1)}
+ggplot(data = df_final, aes(x = PreviousSalary, fill = MentalHealth)) +
+  geom_density(alpha = 0.5) +
+  labs(title = "Density plot of Previous Salary by Mental Health", x="Previous Salary", y= 'Density')
+
+```
+## 5. Hypothesis Testing
+
+### Test 1: Is there a significant difference between employed males and non-males in their respective education levels?
+
+We first want to check whether there is a difference in the number of males vs non-males employed at every level of education.
+
+Because we have over 65,000 data points, we may use statistical methods that apply to data satisfying normality conditions (because of the central limit theorem).
+
+Hence, we use a series of two sample z tests to conduct our first set hypothesis tests.
+
+The assumptions we need to satisfy are:
+- Large sample size\
+- Data are collected as a simple random sample (so that observations are independent from one another)
+
+We first want to look at the individuals with a bachelor's degree.
+$H_0:$ There is no difference in the number of undergraduate males who are employed when compared to nonmales\
+$H_a:$ There is a significant difference in the number of undergraduate males who are employed when compared to nonmales
+```{r, two sample z test for proportions: undergraduate}
+# We first subset into the different education levels, here undergraduate
+undergrad <- subset(df_clean, df_clean$EdLevel == "Undergraduate")
+
+
+# For the two sample z test, we need our two samples, males and nonmales
+undergrad_male <- subset(undergrad, undergrad$Gender == "Man") # Sample 1, males
+
+undergrad_male_employed <- subset(undergrad_male, undergrad_male$Employment == "currently_employed")
+
+undergrad_nonmales <- subset(undergrad, undergrad$Gender != "Man") # Sample 2, females and nonbinary
+
+undergrad_nonmales_employed <- (subset(undergrad_nonmales, undergrad_nonmales$Employment == "currently_employed"))
+
+
+undergrad_employed_ztest <- prop.test(c(nrow(undergrad_male_employed), nrow(undergrad_nonmales_employed)), c(nrow(undergrad_male),nrow(undergrad_nonmales)))
+undergrad_employed_ztest
+```
+The proportion of undergraduate males who are employed is: `r nrow(undergrad_male_employed)`/`r nrow(undergrad_male)`\
+The proportion of undergraduate nonmales who are employed is: `r nrow(undergrad_nonmales_employed)`/`r nrow(undergrad_nonmales)`\
+Our two sample z test statistic is: `r undergrad_employed_ztest$statistic` which has an associated p-value of `r undergrad_employed_ztest$p.value`.\
+At and alpha-level of .05 we fail to reject the null hypothesis and conclude that there is not a significant difference in the number of males vs nonmales who have a bachelor's degree and are employed.
+
+We now look at individuals with a masters.
+$H_0:$ There is no difference in the number of males with a master's degree who are employed when compared to nonmales\
+$H_a:$ There is a significant difference in the number of males with a master's degree who are employed when compared to nonmales
+
+```{r, two sample z test for proportions: masters}
+# We first subset into the different education levels, here masters
+masters <- subset(df_clean, df_clean$EdLevel == "Master")
+
+
+# For the two sample z test, we need our two samples, males and nonmales
+masters_male <- subset(masters, masters$Gender == "Man") # Sample 1, males
+
+masters_male_employed <- subset(masters_male, masters_male$Employment == "currently_employed")
+
+
+masters_nonmales <- subset(masters, undergrad$Gender != "Man") # Sample 2, females and nonbinary
+
+masters_nonmales_employed <- (subset(masters_nonmales, masters_nonmales$Employment == "currently_employed"))
+
+
+masters_employed_ztest <- prop.test(c(nrow(masters_male_employed), nrow(masters_nonmales_employed)), c(nrow(masters_male),nrow(masters_nonmales)))
+masters_employed_ztest
+
+```
+The proportion of males with a master's who are employed is: `r nrow(masters_male_employed)`/`r nrow(masters_male)`\
+The proportion of nonmales with a master's who are employed is: `r nrow(masters_nonmales_employed)`/`r nrow(masters_nonmales)`\
+Our two sample z test statistic is: `r masters_employed_ztest$statistic` which has an associated p-value of `r masters_employed_ztest$p.value`.\
+At and alpha-level of .05 we reject the null hypothesis and conclude that there is a significant difference in the number of males vs nonmales who have a master's degree and are employed.
+
+Finally, we examine individuals who have a doctorate degree.
+$H_0:$ There is no difference in the number of males with a PhD who are employed when compared to nonmales\
+$H_a:$ There is a significant difference in the number of males with a PhDwho are employed when compared to nonmales
+```{r, two sample z test for proportions: Phd}
+# We first subset into the different education levels, here PhD
+phd <- subset(df_clean, df_clean$EdLevel == "PhD")
+
+
+# For the two sample z test, we need our two samples, males and nonmales
+phd_male <- subset(phd, phd$Gender == "Man") # Sample 1, males
+
+phd_male_employed <- subset(phd_male, phd_male$Employment == "currently_employed")
+
+phd_nonmales <- subset(phd, phd$Gender != "Man") # Sample 2, females and nonbinary
+
+phd_nonmales_employed <- (subset(phd_nonmales, phd_nonmales$Employment == "currently_employed"))
+
+
+phd_employed_ztest <- prop.test(c(nrow(phd_male_employed), nrow(phd_nonmales_employed)), c(nrow(phd_male),nrow(phd_nonmales)))
+phd_employed_ztest
+```
+The proportion of males with a master's who are employed is: `r nrow(phd_male_employed)`/`r nrow(phd_male)`\
+The proportion of nonmales with a master's who are employed is: `r nrow(phd_nonmales_employed)`/`r nrow(phd_nonmales)`\
+Our two sample z test statistic is: `r phd_employed_ztest$statistic` which has an associated p-value of `r phd_employed_ztest$p.value`.\
+At and alpha-level of .05 we fail to reject the null hypothesis and conclude that there is not a significant difference in the number of males vs nonmales who have a doctorate degree and are employed.
+
+In real-world scenarios, these results might suggest that, in certain employment contexts, master's education appears to be a distinguishing factor between males and non-males. This could reflect societal or industry biases, or possibly differing educational or career choices among genders. Companies keen on diversity might want to address such disparities in their recruitment and mentorship programs, ensuring opportunities aren't skewed by gender-based educational trends.
+
+### Test 2: Does education level significantly impact employment in the technical field?
+Since we the number of known computer skills is continuous and we have more than two categories for level of education, we would like to conduct an ANOVA test to answer this question.
+
+The assumptions we need to satisfy are:
+- All 5 groups are normally distributed\
+- Homogeneity of variances\
+- Error terms are independent of each other
+
+Let's first visualize the question we are trying to answer by examining the boxplots for distribution of computer skills at all education levels.\
+```{r, ANOVA boxplots}
+loadPkg("ggplot2")
+ggplot(df_clean, aes(x=EdLevel, y=ComputerSkills)) + 
+  geom_boxplot( colour=c("#ff0000","#FFFF00", "#11cc11","#0000ff","#ff00ff"), alpha = .5, outlier.shape=8, outlier.size=4) +
+  labs(x="Education Level", y = "Number of Computer Skills")
+```
+
+There seem to be at least some differences, and we solidify this by conducting our hypothesis test using ANOVA.
+
+$H_0:$: There is no significant difference in the average number of computer skills acquired when comparing all individuals at every level of education.\
+$H_a:$ At least one education level group differs from the others in the average number of computer skills known.
+
+```{r, ANOVA test}
+anovaRes = aov(ComputerSkills ~ EdLevel, data=df_clean)
+anovaSummary = summary(anovaRes)
+anovaSummary
+
+# Extracting mean computer skills for each education level
+mean_skills_Other = mean(subset(df_clean, EdLevel == "Other")$ComputerSkills)
+mean_skills_NoHigherEd = mean(subset(df_clean, EdLevel == "NoHigherEd")$ComputerSkills)
+mean_skills_Undergraduate = mean(subset(df_clean, EdLevel == "Undergraduate")$ComputerSkills)
+mean_skills_Master = mean(subset(df_clean, EdLevel == "Master")$ComputerSkills)
+mean_skills_PhD = mean(subset(df_clean, EdLevel == "PhD")$ComputerSkills)
+```
+The average number of computer skills for\
+Other: `r mean_skills_Other`\
+No Higher Ed: `r mean_skills_NoHigherEd`\
+Undergraduate: `r mean_skills_Undergraduate`\
+Master's: `r mean_skills_Master`\
+PhD: `r mean_skills_PhD`\
+Our ANOVA F test statistic is 281.8 with p-value <2e-16. At an alpha-level of .05, we reject the null hypothesis. We conclude that there is at least one education level for which the average number of computer skills is different from the other groups.
+
+Since we have a highly significant p-value based on our ANOVA test above, we want to conduct a Post Hoc analysis of the test using the standard method, Tukey's HSD test.
+```{r, Post Hoc Tukeys Test}
+tukeyRes <- TukeyHSD(anovaRes)
+tukeyRes
+```
+
+Since all p-values for every pairwise comparison was less than 0.05, we conclude that the average number of computer skills for every education level was significantly different from every other level of education.
+
+[real world conclusion; we could look at specific averages to determine which levels of education provide less or more computer skills i.e. quality vs quantity]
+
+In real-world terms, this suggests that as one progresses through higher levels of education, from no higher education to a PhD, there is a substantial increase in computer skills. For employers in the technical field, this could mean that candidates with advanced degrees might bring a higher level of expertise and proficiency in computer-related tasks. However, it's also essential to consider the quality versus quantity aspect: while a higher degree might indicate more extensive knowledge, it does not necessarily guarantee the quality or applicability of that knowledge in specific job roles.
+
+### Test 3: Is age a significant factor in determining whether an individual is a professional developer or not?
+Now, since age is a continuous variable and the classification for professional development a categorical one, we would like to use a Chi square test of independence to determine whether the two variables are associated.
+
+The assumptions we need to satisfy are:
+- The data were drawn as a simple random sample\
+- All expected counts are greater than 5
+
+$H_0:$ Whether an individual is a professional developer or not is independent of their age.\
+$H_a:$ Age and status of being a professional developer are associated with each other.
+```{r, Chi square}
+# We need four categories: <35, NotDev; >35, NotDev; <35 Dev; >35 Dev
+notDev_under35 <- subset(df_clean, df_clean$Age == "<35" & df_clean$MainBranch == "NotDev")
+notDev_over35 <- subset(df_clean, df_clean$Age == ">35" & df_clean$MainBranch == "NotDev")
+dev_under35 <- subset(df_clean, df_clean$Age == "<35" & df_clean$MainBranch == "Dev")
+dev_over35 <- subset(df_clean, df_clean$Age == ">35" & df_clean$MainBranch == "Dev")
+```
+
+The contingency table that we perform our chi square test on is the following:
+```{r, Chi square table}
+chisq_matrix <- matrix(c(nrow(dev_over35),nrow(dev_under35),nrow(notDev_over35),nrow(notDev_under35)), nrow = 2, ncol = 2)
+
+# Now we conduct a chi square test of independence
+chitest = chisq.test(chisq_matrix)
+chitest
+```
+Our chi square test statistic is `r chitest$statistic` with p-value `r chitest$p.value`. At an alpha-level of .05 we reject the null hypothesis. We conclude that age and being a professional developer are associated.
+
+This data might imply that certain age groups are more inclined or better positioned to pursue developer careers. For educational institutions, this insight can guide curriculum planning, targeting age groups that are more likely to transition into professional development.
+
+### Test 4: Does mental health influence previous salary?
+To answer our final question, we conduct a two sample t test to compare the mean salary between those with and without mental health issues. (We use a t test as opposed to its normal counterpart, a z test, even though we have a large sample, size since the population variance is unknown.)
+
+The assumptions we need to satisfy are:
+- The observations are independent of one another\
+- The data in each group were take from a simple random sample\
+- The data are relatively normally distributed
+- The data is continuous in nature\
+- Homogeneity of variances
+
+$H_0:$ Whether an individual is a professional developer or not is independent of their age.\
+$H_a:$ Age and status of being a professional developer are associated with each other.
+```{r, two sample t-test for means}
+# Subset the PreviousSalary for individuals with 'Yes' and 'No' in the MentalHealth column
+salary_yes <- df_clean$PreviousSalary[df_clean$MentalHealth == "Yes"]
+salary_no <- df_clean$PreviousSalary[df_clean$MentalHealth == "No"]
+
+# Checking the mean of both groups just to get an idea
+format(mean(salary_yes, na.rm = TRUE), digits=5)
+format(mean(salary_no, na.rm = TRUE), digits=5)
+
+# Now we conduct a two-sample t-test on PreviousSalary between the two groups
+ttest_2sample_salary_yes_no <- t.test(salary_yes, salary_no)
+ttest_2sample_salary_yes_no
+
+```
+The average salary for those who responded\ 
+'yes' to having mental health issues: $72,709.47\
+'no' to having mental health issues: $64,652.15\
+Our t test statistic is `r ttest_2sample_salary_yes_no$statistic` with p-value `r ttest_2sample_salary_yes_no$p.value`. At an alpha-level of .05 we reject the null hypothesis. We conclude that the mean salary of those with mental health issues is significantly different (in this case, higher) than those without.
+
+This shows that those acknowledging mental health issues earned between $7,141 to $8,973 more than those who didn't. This suggests that a higher salary often carries added responsibilities, leading to stress and potential mental health challenges. Companies and HR teams can use this insight to monitor employee well-being. Job seekers should also be aware that higher salaries might come with increased mental health considerations, aiding them in making informed decisions.
+
+## 6. Limitations of the Dataset 
+
+While the dataset is comprehensive, it predominantly focuses on the tech industry and individuals from Stack Overflow, which are mostly male audiences, and it may not be wholly representative of the broader job market. Additional information on soft skills, cultural fit, and detailed job roles might have added more depth to our analysis. The distribution of gender within the dataset displays a pronounced male predominance, with a notable imbalance in favor of males. The lack of currency information within the 'PreviousSalary' variable hinders the establishment of a unified metric for measurement. Furthermore, the representation of age as a categorical variable offers limited insight into the precise age in years. 
+
+## 7. Further Research 
+For the future, we have a few main suggestions. First, we recommend doing an EEPEN analysis to look more closely at specific things like age or where someone is from. This will give us clearer ideas about those areas. Second, we think it's a good idea to use the data to make models that can guess if someone will get a job. Of interest would be building both a logistic regression model and a supervised learning model and making a comparison on the accuracy of both method's output. It would also be helpful to find the most efficient statistical technique to deal with a category that has a large number of levels (in our case, 172 countries). As we learn more, we can improve on these models and offer a thorough analysis that is helpful to both employers and individuals actively in the job market. 
+
+## 8. References
+The Future of Jobs Report 2023. World Economic Forum. (n.d.).             https://www.weforum.org/publications/the-future-of-jobs-report-2023/digest/  \
+Picciotto, R. (2023, July 7). Tech roles are still “the most in-demand,” says job market expert-but you need these skills to land them. CNBC.    https://www.cnbc.com/2023/07/07/tech-jobs-are-still-the-most-in-demand-says-employment-market-expert.html \
+Tankha, Ayush. (2023). *Employability Classification of Over 70,000 Job Applicants*. StackOverflow. https://www.kaggle.com/datasets/ayushtankha/70k-job-applicants-data-human-resource/data \
+Technology & IT hiring trends 2023: Robert Half. English. (2023, September 15). https://www.roberthalf.com/us/en/insights/salary-hiring-trends/demand-for-skilled-talent/tech-it 
