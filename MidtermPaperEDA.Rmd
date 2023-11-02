@@ -1,11 +1,12 @@
 ---
-title: "Team_Global_Summary_Paper"
-authors: "Sajan Kumar Kar, Neelima Puthanveetil, Sandhya Karki, Saipavan Mekala"
+title: "Team Global Summary Paper"
+authors: "Sajan Kumar Kar, Neelima Puthanveetil, Sandhya Karki, Sai Pavan Mekala"
 date: "2023-10-31"
 output:
   html_document:
     code_folding: hide
     number_sections: false
+    theme: flatly
     toc: yes
     toc_depth: 3
     toc_float: yes
@@ -14,11 +15,11 @@ output:
     toc_depth: '3'
 ---
 
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, warning = F)
 ```
 
-#  Team Global Midterm Project on Job Applications Data
 
 ## 1. Introduction 
 
@@ -26,7 +27,7 @@ In today’s highly competitive job market, organizations consistently strive to
 
 ## 2. Rationale for Topic Selection 
 
-Given the fluctuating nature of today's job market, both employers and job seekers face unique challenges. Recognizing the factors that affect employability and making data-driven decisions can bridge the gap between talent and opportunity. Numerous studies have addressed employability, yet gaps remain. This paper aims to build on the existing knowledge by providing a fresh perspective using a novel dataset. 
+Given the fluctuating nature of today's job market, both employers and job seekers face unique challenges. Recognizing the factors that affect employability and making data-driven decisions can bridge the gap between talent and opportunity. Numerous studies have addressed employability, yet gaps remain. This paper aims to build on the existing knowledge by providing a fresh perspective using a novel dataset.
 
 ## 3. Dataset Overview 
 
@@ -67,35 +68,27 @@ Here’s a view of how the dataset looks like:
 
 ```{r }
 library(ezids)
-df = data.frame(read.csv('./Project/stackoverflow_full.csv', header = TRUE))
+df = data.frame(read.csv('stackoverflow_full.csv', header = TRUE))
 xkabledplyhead(df, title = "Job Applicants Data")
 ```
- 
-
- 
-
-## 4. Limitations of the Dataset 
-
-While the dataset is comprehensive, it predominantly focuses on the tech industry and individuals from Stack Overflow, which are mostly male audiences, and it may not be wholly representative of the broader job market. Additional information on soft skills, cultural fit, and detailed job roles might have added more depth to our analysis. The distribution of gender within the dataset displays a pronounced male predominance, with a notable imbalance in favor of males. The lack of currency information within the `PreviousSalary` variable hinders the establishment of a unified metric for measurement. Furthermore, the representation of age as a categorical variable offers limited insight into the precise age in years. 
 
 
-## 5. SMART Questions: 
+## 4. SMART Questions: 
 
 Our SMART questions arose from our preliminary understanding of the job market's challenges: 
 
-Is there a significant difference between employed males and non-males in their respective education levels? 
+1. Is there a significant difference between employed males and non-males in their respective education levels? 
 
-Does education level significantly impact employment in the technical field? 
+2. Does education level significantly impact employment in the technical field? 
 
-Is age a significant factor in determining whether an individual is a professional developer or not? 
-
-Does mental health influence previous salary? 
-
+3. Is age a significant factor in determining whether an individual is a professional developer or not? 
+4. Does mental health influence previous salary? 
 
 
-## 6. Exploratory Data Analysis (EDA) 
 
-### 6.1. Data exploration
+## 5. Exploratory Data Analysis (EDA) 
+
+### 5.1. Data exploration
 The dataset is found to have 73462 observations with no missing values or duplicates in any columns. It consists of some numerical and some categorical columns.
 
 The numerical columns are: 
@@ -111,7 +104,7 @@ colnames(subset(df, select = c(names(df)[sapply(df, is.character)])))
 ```
 The categorical variables are of type character in the dataset. There are 172 countries and the skills in `HaveWorkedWith` column are mixed together.
 
-### 6.2. Data preprocessing & Cleaning
+### 5.2. Data preprocessing & Cleaning
 
 In the context of this analysis, 
 * The `Index` column has been deemed unnecessary and subsequently removed. 
@@ -198,7 +191,7 @@ df_final <- df_clean
 ```
 The final cleaned data has `r nrow(df_final)` observations.
 
-### 6.3. Visualizations
+### 5.3. Visualizations
 
 Various visualizations were implemented to get a better look at the data and to get answers for the questions that we proposed.
 
@@ -238,7 +231,8 @@ ggplot(data = df_final, aes(x = PreviousSalary, fill = MentalHealth)) +
   labs(title = "Density plot of Previous Salary by Mental Health", x="Previous Salary", y= 'Density')
 
 ```
-## 5. Hypothesis Testing
+
+## 6. Hypothesis Testing
 
 ### Test 1: Is there a significant difference between employed males and non-males in their respective education levels?
 
@@ -248,11 +242,12 @@ Because we have over 65,000 data points, we may use statistical methods that app
 
 Hence, we use a series of two sample z tests to conduct our first set hypothesis tests.
 
-The assumptions we need to satisfy are:
+The assumptions we need to satisfy are:\
 - Large sample size\
 - Data are collected as a simple random sample (so that observations are independent from one another)
 
 We first want to look at the individuals with a bachelor's degree.
+
 $H_0:$ There is no difference in the number of undergraduate males who are employed when compared to nonmales\
 $H_a:$ There is a significant difference in the number of undergraduate males who are employed when compared to nonmales
 ```{r, two sample z test for proportions: undergraduate}
@@ -279,6 +274,7 @@ Our two sample z test statistic is: `r undergrad_employed_ztest$statistic` which
 At and alpha-level of .05 we fail to reject the null hypothesis and conclude that there is not a significant difference in the number of males vs nonmales who have a bachelor's degree and are employed.
 
 We now look at individuals with a masters.
+
 $H_0:$ There is no difference in the number of males with a master's degree who are employed when compared to nonmales\
 $H_a:$ There is a significant difference in the number of males with a master's degree who are employed when compared to nonmales
 
@@ -308,6 +304,7 @@ Our two sample z test statistic is: `r masters_employed_ztest$statistic` which h
 At and alpha-level of .05 we reject the null hypothesis and conclude that there is a significant difference in the number of males vs nonmales who have a master's degree and are employed.
 
 Finally, we examine individuals who have a doctorate degree.
+
 $H_0:$ There is no difference in the number of males with a PhD who are employed when compared to nonmales\
 $H_a:$ There is a significant difference in the number of males with a PhDwho are employed when compared to nonmales
 ```{r, two sample z test for proportions: Phd}
@@ -339,6 +336,7 @@ In real-world scenarios, these results might suggest that, in certain employment
 Since we the number of known computer skills is continuous and we have more than two categories for level of education, we would like to conduct an ANOVA test to answer this question.
 
 The assumptions we need to satisfy are:
+
 - All 5 groups are normally distributed\
 - Homogeneity of variances\
 - Error terms are independent of each other
@@ -384,7 +382,6 @@ tukeyRes
 
 Since all p-values for every pairwise comparison was less than 0.05, we conclude that the average number of computer skills for every education level was significantly different from every other level of education.
 
-[real world conclusion; we could look at specific averages to determine which levels of education provide less or more computer skills i.e. quality vs quantity]
 
 In real-world terms, this suggests that as one progresses through higher levels of education, from no higher education to a PhD, there is a substantial increase in computer skills. For employers in the technical field, this could mean that candidates with advanced degrees might bring a higher level of expertise and proficiency in computer-related tasks. However, it's also essential to consider the quality versus quantity aspect: while a higher degree might indicate more extensive knowledge, it does not necessarily guarantee the quality or applicability of that knowledge in specific job roles.
 
@@ -392,6 +389,7 @@ In real-world terms, this suggests that as one progresses through higher levels 
 Now, since age is a continuous variable and the classification for professional development a categorical one, we would like to use a Chi square test of independence to determine whether the two variables are associated.
 
 The assumptions we need to satisfy are:
+
 - The data were drawn as a simple random sample\
 - All expected counts are greater than 5
 
@@ -421,6 +419,7 @@ This data might imply that certain age groups are more inclined or better positi
 To answer our final question, we conduct a two sample t test to compare the mean salary between those with and without mental health issues. (We use a t test as opposed to its normal counterpart, a z test, even though we have a large sample, size since the population variance is unknown.)
 
 The assumptions we need to satisfy are:
+
 - The observations are independent of one another\
 - The data in each group were take from a simple random sample\
 - The data are relatively normally distributed
@@ -443,21 +442,21 @@ ttest_2sample_salary_yes_no <- t.test(salary_yes, salary_no)
 ttest_2sample_salary_yes_no
 
 ```
-The average salary for those who responded\ 
+The average salary for those who responded\
 'yes' to having mental health issues: $72,709.47\
 'no' to having mental health issues: $64,652.15\
 Our t test statistic is `r ttest_2sample_salary_yes_no$statistic` with p-value `r ttest_2sample_salary_yes_no$p.value`. At an alpha-level of .05 we reject the null hypothesis. We conclude that the mean salary of those with mental health issues is significantly different (in this case, higher) than those without.
 
 This shows that those acknowledging mental health issues earned between $7,141 to $8,973 more than those who didn't. This suggests that a higher salary often carries added responsibilities, leading to stress and potential mental health challenges. Companies and HR teams can use this insight to monitor employee well-being. Job seekers should also be aware that higher salaries might come with increased mental health considerations, aiding them in making informed decisions.
 
-## 6. Limitations of the Dataset 
+## 7. Limitations of the Dataset 
 
-While the dataset is comprehensive, it predominantly focuses on the tech industry and individuals from Stack Overflow, which are mostly male audiences, and it may not be wholly representative of the broader job market. Additional information on soft skills, cultural fit, and detailed job roles might have added more depth to our analysis. The distribution of gender within the dataset displays a pronounced male predominance, with a notable imbalance in favor of males. The lack of currency information within the 'PreviousSalary' variable hinders the establishment of a unified metric for measurement. Furthermore, the representation of age as a categorical variable offers limited insight into the precise age in years. 
+While the dataset is comprehensive, it predominantly focuses on the tech industry and individuals from Stack Overflow, which are mostly male audiences, and it may not be wholly representative of the broader job market. Additional information on soft skills, cultural fit, and detailed job roles might have added more depth to our analysis. The distribution of gender within the dataset displays a pronounced male predominance, with a notable imbalance in favor of males. The lack of currency information within the `PreviousSalary` variable hinders the establishment of a unified metric for measurement. Furthermore, the representation of age as a categorical variable offers limited insight into the precise age in years. 
 
-## 7. Further Research 
+## 8. Further Research 
 For the future, we have a few main suggestions. First, we recommend doing an EEPEN analysis to look more closely at specific things like age or where someone is from. This will give us clearer ideas about those areas. Second, we think it's a good idea to use the data to make models that can guess if someone will get a job. Of interest would be building both a logistic regression model and a supervised learning model and making a comparison on the accuracy of both method's output. It would also be helpful to find the most efficient statistical technique to deal with a category that has a large number of levels (in our case, 172 countries). As we learn more, we can improve on these models and offer a thorough analysis that is helpful to both employers and individuals actively in the job market. 
 
-## 8. References
+## 9. References
 The Future of Jobs Report 2023. World Economic Forum. (n.d.).             https://www.weforum.org/publications/the-future-of-jobs-report-2023/digest/  \
 Picciotto, R. (2023, July 7). Tech roles are still “the most in-demand,” says job market expert-but you need these skills to land them. CNBC.    https://www.cnbc.com/2023/07/07/tech-jobs-are-still-the-most-in-demand-says-employment-market-expert.html \
 Tankha, Ayush. (2023). *Employability Classification of Over 70,000 Job Applicants*. StackOverflow. https://www.kaggle.com/datasets/ayushtankha/70k-job-applicants-data-human-resource/data \
