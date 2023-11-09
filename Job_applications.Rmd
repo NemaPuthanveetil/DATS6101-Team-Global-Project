@@ -451,3 +451,9 @@ ttest_2sample_salary_yes_no
 
 ```
 At an alpha-level of .05 we reject the null hypothesis. We conclude that the mean salary of those with mental health issues is significantly different (in this case, higher) than those without.
+
+## 6. Data Preparation
+
+
+## 7. Model Building
+
