@@ -504,6 +504,7 @@ df_before_oneHot <- df_enc
 drops <- "Gender"
 df_enc <- df_enc[ , !(names(df_enc) %in% drops)]
 
+
 df_enc <- cbind(df_enc, one_hot_df)
 
 
