@@ -27,6 +27,10 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r Libraries}
 # uncomment and run the below line to install the required packages
 #install.packages(c("gganimate", "png", "gifski"))
+# install.packages("mltools")
+# install.packages("data.table")
+library(mltools)
+library(data.table)
 library(ggplot2)
 library(tidyr)
 library(dplyr)
@@ -453,7 +457,65 @@ ttest_2sample_salary_yes_no
 At an alpha-level of .05 we reject the null hypothesis. We conclude that the mean salary of those with mental health issues is significantly different (in this case, higher) than those without.
 
 ## 6. Data Preparation
+In preparation for model building, we want to check if the data types are accurate, encode categorical variables, scale any parameters if needed, perform feature engineering, and check for severe data imbalance.
+```{r, data prep checking}
+str(df_final)
+```
+From our EDA section, we see that all variables have been converted to their correct, respective data types. We still leave the "Country" variable as is, since there are far too many variables for practical analysis based on the methods we currently know. (Perhaps we can consider smaller analysis by subsetting the data based on "Country".) 
 
+Now, we will encode our categorical variables; namely `Age`, `Accessibility`, `EdLevel`, `Employment`, `Gender`, `MentalHealth`, and `MainBranch` (leaving "Country" as it is).
+
+Since `Age` and `EdLevel` are ordinal variables, we use ordinal encoding to prepare this subset of categorical data.\
+Now, `Accessibility`, `Employment`, `MentalHealth`, `MainBranch` are nominal variables with just 2 categories within them, so one-hot encoding them will just unnecessarily create more features, so we will label encode them.
+
+
+```{r, ordinal encoding}
+#saving df_final copy
+df_enc = df_final
+
+# We first want to set age as an ordinal factor:
+df_enc$Age = factor(df_enc$Age, ordered = T, 
+                          levels = c("<35", ">35"))
+# EdLevel was already converted to an ordinal variable in the EDA section so we can proceed
+
+# Now we can conduct label encoding on Age and Education Level:
+df_enc$Age <- as.numeric(df_enc$Age)
+df_enc$EdLevel <- as.numeric(df_enc$EdLevel)
+df_enc$Accessibility <- as.numeric(df_enc$Accessibility)
+df_enc$Employment <- as.numeric(df_enc$Employment)
+df_enc$MentalHealth <- as.numeric(df_enc$MentalHealth)
+df_enc$MainBranch <- as.numeric(df_enc$MainBranch)
+
+```
+
+`Gender` has 3 categories and is nominal, so we will use the one-hot-encoding method.
+
+```{r, one hot encoding}
+# subsetting the dataframe to select those cateogrical variables that require one hot encoding:
+one_hot_df <- subset(df_enc, select = Gender)
+
+#performing one hot encoding
+one_hot_df <- one_hot(as.data.table(one_hot_df))
+
+# saving the dataframe before one hot encoding:
+df_before_oneHot <- df_enc
+
+# dropping the categorical variables that we just performed one hot encoding on and adding the new columns:
+drops <- "Gender"
+df_enc <- df_enc[ , !(names(df_enc) %in% drops)]
+
+df_enc <- cbind(df_enc, one_hot_df)
+```
+
+```{r}
+head(df_enc)
+# unique(df_enc$Accessibility_Yes)
+```
+
+Finally, for the numerical variables, we want to scale them.
+```{r, regularization}
+
+```
 
 ## 7. Model Building
 
