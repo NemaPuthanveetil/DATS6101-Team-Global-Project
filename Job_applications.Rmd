@@ -504,22 +504,85 @@ df_before_oneHot <- df_enc
 drops <- "Gender"
 df_enc <- df_enc[ , !(names(df_enc) %in% drops)]
 
-
 df_enc <- cbind(df_enc, one_hot_df)
 
-
-
 ```
 
-```{r}
-head(df_enc)
-# unique(df_enc$Accessibility_Yes)
+We can't really work with `HaveWorkedWith` column, it is too messy. The `ComputerSkills` feature is built on top of it so we'll be using this.
+
+```{r column remove}
+df_enc <- subset(df_enc, select = -c(HaveWorkedWith))
 ```
 
-Finally, for the numerical variables, we want to scale them.
-```{r, regularization}
 
+*This will be experimented upon for model building*
+
+```{r one hot country}
+# one-hot encode Country here
+# df_enc$Country = factor(df_enc$Country)
+# df_enc <- subset(cbind(df_enc, one_hot(as.data.table(df_enc$Country))), select = -c(Country))
+
+# str(df_enc)
 ```
+
+
+``` {r}
+df_final2 <- subset(df_enc, select = -c(Country))
+# head(df_final2)
+str(df_final2)
+```
+
+Finally, for the numerical variables in the train set, we want to scale them.
+```{r standardization}
+df_final2 <- df_final2 %>%
+  mutate_at(vars('YearsCode', 'YearsCodePro', 'PreviousSalary', 'ComputerSkills'), scale)
+```
+
+
+SOME INSTRUCTIONS FOR NOW:\
+Standardization is not a necessity. Experiment with standardized and non standardized data in model building. There is also another way of feature scaling called normalization, which scales the data into the range 0 and 1. In general, normalization works better for KNN(since this doesn't assume normal distribution), and, standardization works better for PCA. For Tree algorithms, scaling may hinder performance.
 
 ## 7. Model Building
+
+```{r train test split}
+data_sample <- sample(c(TRUE, FALSE), nrow(df_final2), replace=TRUE, prob=c(0.8, 0.2))
+train <- df_final2[data_sample, ]
+test <- df_final2[!data_sample, ]
+
+# x_train = subset(train, select = -c(Employed))
+# x_test = subset(test, select = -c(Employed))
+# y_train = subset(train, select = c(Employed))
+# y_test = subset(test, select = c(Employed))
+# 
+# head(x_train)
+# head(x_test)
+# head(y_train)
+# head(y_test)
+```
+
+For our work, I'm dividing this into 4 sections where each of us will experiment with different models
+
+## Sajan
+
+```{r Basic logistic regression}
+lr_model <- glm(Employed~., data = train, family = "binomial")
+summary(lr_model)
+
+
+```
+
+## Sandhya
+
+
+
+## Nema
+
+
+
+## Pavan
+
+
+
+
+
 
