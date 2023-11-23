@@ -29,6 +29,7 @@ knitr::opts_chunk$set(echo = TRUE)
 #install.packages(c("gganimate", "png", "gifski"))
 # install.packages("mltools")
 # install.packages("data.table")
+# install.packages("MLmetrics")
 library(mltools)
 library(data.table)
 library(ggplot2)
@@ -38,6 +39,9 @@ library(ezids)
 library(gganimate)
 library(png)
 library(gifski)
+library(pROC)
+library(MLmetrics)
+
 
 ```
 
@@ -570,6 +574,27 @@ summary(lr_model)
 
 
 ```
+Let's do a quick class imbalance check before deciding on the evaluation metric.
+
+``` {r Imbalance check}
+ggplot(data = df_final, aes(Employed, after_stat(count))) + 
+  geom_bar(alpha = 0.5)
+
+```
+
+Since there's no such major imbalance, and we want to know the overall performance of the model, we'll use AUC ROC as our evaluation metric
+
+```{r AUC ROC Evaluation}
+pred=predict(lr_model, test, type = "response" )
+# test$prob=prob
+roc_lr <- roc(test$Employed, pred)
+auc(roc_lr) # area-under-curve prefer 0.8 or higher.
+plot(roc_lr)
+
+
+```
+
+
 
 ## Sandhya
 
