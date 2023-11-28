@@ -30,6 +30,7 @@ knitr::opts_chunk$set(echo = TRUE)
 # install.packages("mltools")
 # install.packages("data.table")
 # install.packages("MLmetrics")
+# install.packages("rpart")
 library(mltools)
 library(data.table)
 library(ggplot2)
@@ -41,7 +42,7 @@ library(png)
 library(gifski)
 library(pROC)
 library(MLmetrics)
-
+library(rpart)
 
 ```
 
@@ -601,6 +602,19 @@ plot(roc_lr)
 
 
 ## Nema
+```{r, Classification tree}
+# Still a work in progress
+set.seed(1)
+employfit <- rpart(Employed ~ ., data=df_final, method="class", control = list(maxdepth = 4) )
+
+printcp(employfit) # display the results 
+plotcp(employfit) # visualize cross-validation results 
+summary(employfit) # detailed summary of splits
+
+# plot tree 
+plot(employfit, uniform=TRUE, main="Classification Tree for Employment")
+text(employfit, use.n=TRUE, all=TRUE, cex=.8)
+```
 
 
 
