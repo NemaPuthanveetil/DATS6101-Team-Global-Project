@@ -5,6 +5,8 @@ date: "2023-10-15"
 output:
   html_document:
     code_folding: hide
+    theme: flatly
+    highlight: pygments
     number_sections: false
     toc: yes
     toc_depth: 3
@@ -18,12 +20,19 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+# Team Global project on Job Applicants Data
 ## 1. Import Libraries
-Team Global project on Job Applications Data
+
 
 ```{r Libraries}
 # uncomment and run the below line to install the required packages
 #install.packages(c("gganimate", "png", "gifski"))
+# install.packages("mltools")
+# install.packages("data.table")
+# install.packages("MLmetrics")
+# install.packages("rpart")
+library(mltools)
+library(data.table)
 library(ggplot2)
 library(tidyr)
 library(dplyr)
@@ -31,22 +40,24 @@ library(ezids)
 library(gganimate)
 library(png)
 library(gifski)
-library(gridExtra)
-library(maps)
+library(pROC)
+library(MLmetrics)
+library(rpart)
+
 ```
 
 ## 2. Import Data
 
 ```{r Import_data}
 df = data.frame(read.csv('stackoverflow_full.csv', header = TRUE))
-xkabledplyhead(df)
+xkabledplyhead(df, title = "Job Applicants Data")
 ```
 ```{r Structure}
 #structure of a data frame 
 str(df) 
 ```
 
-The dataframe has 73462 records. We have index, employemnt, yearscode, yearscodepro and previoussalary as integer type and the rest are of character types. Going ahead we would need to convert some of them to factors.
+The dataframe has 73462 records. We have `index`, `employemnt`, `yearscode`, `yearscodepro` and `previoussalary` as integer type and the rest are of character types. Going ahead we would need to convert some of them to factors.
 
 ## 3. Data preprocessing & Cleaning
 
@@ -57,88 +68,10 @@ Let's first check for missing values and duplicate values if any.
 print(colSums(is.na(df)))
 ```
 
-Here we checks the number of unique values in the "Index" column of the dataframe "df" to identify duplicates.
-
 
 ```{r duplicates}
 # Check duplicates
 length(unique(df$Index))
-```
-
-In this we  provided basic dataset statistics, including row and column counts, the number of discrete and continuous columns, and memory allocation information.
-
-```{r Basic Statistics}
-
-# Getting the number of rows and columns
-num_rows <- dim(df)[1]
-num_columns <- dim(df)[2]
-
-# Getting the number of discrete and continuous columns
-discrete_columns <- sum(sapply(df, is.factor))
-continuous_columns <- sum(sapply(df, is.numeric))
-
-# Checking for missing values
-missing_columns <- sum(colSums(is.na(df)) > 0)
-missing_observations <- sum(rowSums(is.na(df)) > 0)
-
-# Getting the number of complete rows
-complete_rows <- sum(complete.cases(df))
-
-# Calculating the total number of observations
-total_observations <- num_rows * num_columns
-
-# Memory allocation
-memory_allocation <- format(object.size(df), units = "Mb")
-
-# Displaying the information
-cat("Basic Statistics and Raw Counts for the Dataset:\n")
-cat("Rows:", num_rows, "\n")
-cat("Columns:", num_columns, "\n")
-cat("Discrete columns:", discrete_columns, "\n")
-cat("Continuous columns:", continuous_columns, "\n")
-cat("All missing columns:", missing_columns, "\n")
-cat("Missing observations:", missing_observations, "\n")
-cat("Complete Rows:", complete_rows, "\n")
-cat("Total observations:", total_observations, "\n")
-cat("Memory allocation:", format(memory_allocation, units = "auto"), "\n")
-
-```
-In this we  provided basic dataset statistics, including row and column counts, the number of discrete and continuous columns, and memory allocation information.
-
-```{r Structure}
-
-
-num_rows <- dim(df)[1]
-num_columns <- dim(df)[2]
-
-discrete_columns <- sum(sapply(df, is.factor))
-continuous_columns <- sum(sapply(df, is.numeric))
-
-missing_columns <- sum(colSums(is.na(df)) > 0)
-missing_observations <- sum(rowSums(is.na(df)) > 0)
-
-complete_rows <- sum(complete.cases(df))
-
-total_observations <- num_rows * num_columns
-
-statistics <- data.frame(
-  Statistic = c("Rows", "Columns", "Discrete Columns", "Missing Observations", "Total Observations"),
-  Count = c(num_rows, num_columns, discrete_columns, missing_observations, total_observations)
-)
-
-statistics$Percentage <- (statistics$Count / sum(statistics$Count)) * 100
-
-bar_plot <- ggplot(statistics, aes(x = Statistic, y = Percentage)) +
-  geom_bar(stat = "identity", width = 0.7, fill = "skyblue") +
-  geom_text(aes(label = paste0(Percentage, "%")), vjust = -0.5, size = 4) +
-  labs(title = "Percentage Breakdown of Dataset Statistics",
-       x = "Statistic", y = "Percentage") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-print(bar_plot)
-
- 
 ```
 
 We notice that there are no missing values and duplicates in the data. So, we have all the observations to work with.
@@ -150,9 +83,6 @@ Now that we know this, let us do some cleaning and feature engineering. First we
 head(subset(df, select = c(names(df)[sapply(df, is.numeric)])))
 ```
 
-* The index column will not be required, so we will drop it (We can use the in-built index of a dataframe).
-* We will convert employment into factor and change the values for a better sense.
-* We will do the same for employed
 
 ```{r numeric feature cleaning}
 df_clean <- subset(df, select = -c(Index))
@@ -175,10 +105,6 @@ head(subset(df_clean, select = c(names(df)[sapply(df, is.character)])))
 
 ```
 
-* Except Country and Haveworkedwith, the rest are clearly categorical features, so we will convert them to factor data type
-* Edlevel is an ordinal feature 
-
-
 ```{r char feature cleaning}
 df_clean$Age = factor(df_clean$Age)
 df_clean$Accessibility = factor(df_clean$Accessibility)
@@ -190,7 +116,6 @@ df_clean$MainBranch = factor(df_clean$MainBranch)
 str(df_clean)
 ```
 
-*"Other" for now is set to be the lowest level. Ideally it should be excluded from the ranking of the levels. But there are about 10000 observations with "other", hence we cannot drop so many rows*
 
 Let's check the number of different countries we have.
 
@@ -233,8 +158,6 @@ par(mfrow = c(2, 1))
 
 ```
 
-So we notice that, all these are right skewed distributions with quite a bit of outliers. All the outliers are on the higher end. Let's check the crictical value for these outliers.
-
 ```{r quantiles}
 o_code= quantile(df_clean$YearsCode, probs = 0.75, na.rm = FALSE) + 
   (1.5 * IQR(df_clean$YearsCode))
@@ -248,19 +171,6 @@ o_cskill = quantile(df_clean$ComputerSkills, probs = 0.75, na.rm = FALSE) +
 print(paste(o_code, o_procode, o_presal, o_cskill))
 ```
 
-So, as per the IQR method, for it to be an outlier we get:
-
-* 39.5 years of coding experience
-* 25.5 years of professional coding experience
-* 193596 as the previous salary
-* 30.5 as the number of computer skills
-
-Someone can have 25.5+ years of professional coding experience. So, it doesn't make sense to remove everything above this value. A good approximation would be 40 years. So we'll consider anyone who has above 40 years of coding and professional coding experience as an outlier and thus remove such observations.
-
-31 computer skills is quite a lot for some, not so much for others. So let's go with a higher approximation of 35 to remove outliers for this.
-
-193k seems a good critical value for an outlier, but since we do not know the currency of salary, let's not remove the higher salary values. There could be people who had an extremely high salary. This scenario isn't unlikely in our world.
-
 ```{r outlier removal}
 df_clean = subset(df_clean, subset = df_clean$YearsCode < 40)
 df_clean = subset(df_clean, subset = df_clean$YearsCodePro < 40)
@@ -268,101 +178,35 @@ df_clean = subset(df_clean, subset = df_clean$ComputerSkills < 35)
 ```
 
 
-Lets take a look at the data now:
+Lets take a look at the final data now:
 
 ```{r final data}
 df_final <- df_clean
-head(df_final)
-
-print(paste("Number of records in final data:", nrow(df_final)))
+xkabledplyhead(df_final, title = "Final Data")
 
 ```
 
+```{r Final Data Basic Info}
+
+# Getting the number of categorical and numerical columns
+cat_cols <- colnames(subset(df_final, select = c(names(df_final)[(sapply(df_final, is.factor)) | 
+                                                       (sapply(df_final, is.ordered)) | 
+                                                       (sapply(df_final, is.character))])))
+
+num_cols <- colnames(subset(df_final, select = c(names(df_final)[sapply(df_final, is.integer)])))
+
+# Displaying the information
+cat("Basic summary and Raw Counts for the Dataset:\n")
+cat("Rows:", dim(df_final)[1], "\n")
+cat("Columns:", dim(df_final)[2], "\n")
+cat("Numerical columns:", num_cols, "\n")
+cat("Categorical Columns:", cat_cols, "\n")
+
+```
 
 ## 4. EDA
 
-Here the `DataExplorer::create_report(df)` function generates a comprehensive exploratory data analysis (EDA) report for a given dataset (`df`). This report includes summary statistics, data visualizations, missing value analysis, and other insights to help users understand and preprocess their data effectively.
-
-```{r}
-library(DataExplorer)
-#DataExplorer::create_report(df)
-```
-
-Here We identify numeric columns in the dataset, created a directory to save histogram plots, and generates histograms for each numeric column. We uses custom colors for the histograms and saves them as individual PNG files in the specified directory for visualizing the data distribution.
-
-```{r }
-
-
-#names of numeric columns
-numeric_cols <- sapply(df, is.numeric)
-numeric_cols <- names(df)[numeric_cols]
-
-# Creating a directory to save the plots
-output_dir <- "numerical_histograms"
-dir.create(output_dir, showWarnings = FALSE)
-
-
-custom_colors <- c("skyblue", "pink", "orange", "purple", "green")
-
-# Looping through the numerical columns and create histograms
-for (col in numeric_cols) {
-  color_index <- match(col, numeric_cols) %% length(custom_colors) + 1
-  fill_color <- custom_colors[color_index]
-
-  # Creating a histogram
-  hist_plot <- ggplot(df, aes(x = .data[[col]]) ) +
-    geom_histogram(fill = fill_color, color = "darkblue", bins = 20) +
-    labs(title = paste("Histogram of", col),
-         x = col,
-         y = "Frequency") +
-    theme_minimal()
-
-  
-  hist_output_file <- file.path(output_dir, paste0("histogram_", col, ".png"))
-  ggsave(filename = hist_output_file, plot = hist_plot, width = 6, height = 4)
-
-  print(hist_plot)
-}
-
-
-```
-
-Here we created a map plot of data from the "df_final" dataset, where countries are identified by "Country," and "Age" values are represented by colors on the map.
-
-```{r}
-# Creating a map of responses by country
-world_map <- map_data("world")
-ggplot(data = df_final, aes(map_id = Country)) +
-  geom_map(aes(fill = Age), map = world_map) +
-  expand_limits(x = world_map$long, y = world_map$lat)
-
-```
-
-Here we created a world map plot using data from the "df_final" dataset. Countries are mapped by "Country," and "MentalHealth" values are visualized using fill colors.
-
-```{r}
-ggplot(data = df_final, aes(map_id = Country)) +
-  geom_map(aes(fill = MentalHealth), map = world_map) +
-  expand_limits(x = world_map$long, y = world_map$lat)
-```
-
-Here we created a world map plot with data from the "df_final" dataset. "Country" identifies countries, and "EdLevel" values are represented with fill colors on the map.
-
-
-```{r}
-ggplot(data = df_final, aes(map_id = Country)) +
-  geom_map(aes(fill = EdLevel), map = world_map) +
-  expand_limits(x = world_map$long, y = world_map$lat)
-```
-
-Here we generated a world map plot based on data from the "df_final" dataset. The map represents countries by "Country," and "Employment" values are depicted using fill colors on the map.
-
-```{r}
-ggplot(data = df_final, aes(map_id = Country)) +
-  geom_map(aes(fill = Employment), map = world_map) +
-  expand_limits(x = world_map$long, y = world_map$lat)
-```
-
+Let's first try to get a good picture of the data which will act as the 1st step to answer the questions that we proposed.
 
 
 ```{r plot- Ed by Gender}
@@ -373,12 +217,14 @@ ggplot(data = subset(df_final, subset = Employed=='hired'), aes(EdLevel, after_s
 
 ```
 
+
 ```{r plot- Ed by Emp}
 ggplot(data = df_final, aes(EdLevel)) + 
   geom_bar(aes(fill = Employment), position = 'dodge', alpha = 0.5) +
   labs(title = "Education Level by Employment", x="Education Level", y="Count")
 
 ```
+
 
 ```{r plot- MainBranch by Age}
 ggplot(data = df_final, aes(MainBranch)) + 
@@ -387,12 +233,14 @@ ggplot(data = df_final, aes(MainBranch)) +
 
 ```
 
+
 ```{r plot- PrevSal by MentalHealth(1)}
 ggplot(data = df_final, aes(x = PreviousSalary, fill = MentalHealth)) +
   geom_density(alpha = 0.5) +
   labs(title = "Density plot of Previous Salary by Mental Health", x="Previous Salary", y= 'Density')
 
 ```
+
 
 ```{r plot- PrevSal by MentalHealth(2)}
 
@@ -412,10 +260,11 @@ ggplot(data = plotdata, aes(x = MentalHealth, y = mean_prevsalary)) +
   labs(title = "Mean Previous Salary by Mental Health", x = 'Mental Health', y="Previous Salary")
 
 ```
+We notice that the mean previous salary of applicants having mental health issues is higher.
 
-Here we splits the "HaveWorkedWith" column by ";" in the `df_final` dataset. It then groups the resulting data by the skill "HaveWorkedWith," calculates the count of each skill, arranges them in descending order, and stores the top 10 most common skills in the `skills_df` data frame.
 
-
+Let's try digging a bit deeper into the data to get additional insights.
+Let's try to extract the most used skill-
 ```{r skills extraction}
 
 df_final %>%
@@ -426,7 +275,7 @@ arrange(desc(Count)) -> skills_df
 head(skills_df, 10)
 ```
 
-We see that Javascript, Docker and HTML/CSS are the skills known by majority of the applicants.
+We see that Javascript, Docker and HTML/CSS are the skills known by majority of the applicants. Let's visualize it to have a better look.
 
 ```{r plot- Top 10 skills known}
 
@@ -456,68 +305,16 @@ anim <- plot +
 animate(anim)
 #anim_save("Skills.gif", anim)
 ```
-
-Now Lets see the skills that make the most money
-
-```{r plot- Highest earning skills}
-
-df_final %>%
-separate_rows(HaveWorkedWith, sep = ";") %>% 
-group_by(HaveWorkedWith) -> skills_df2
-
-aggregate(skills_df2$PreviousSalary, by = list(skills_df2$HaveWorkedWith), FUN = sum) %>%
-arrange(desc(x)) -> skills_df2
-colnames(skills_df2) <- c('Skills', 'TotalEarning')
-
-
-plot <- ggplot(data = head(skills_df2, 10), aes(x = reorder(Skills, TotalEarning), y = TotalEarning)) + 
-  geom_bar(stat = 'identity', aes(fill = Skills), alpha = 0.6) + 
-  coord_flip() + 
-  theme(axis.text.x = element_blank(),
-        axis.line = element_blank(),
-        axis.ticks = element_blank(),
-        panel.background = element_blank(),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.grid.major.x = element_line(size = 0.1, color = "grey"),
-        panel.grid.minor.x = element_line(size = 0.1, color = "grey"),
-        plot.background = element_blank()) + 
-  geom_text(aes(y = TotalEarning, label = paste(round(TotalEarning/1000000, 2), 'M'))) +
-  labs(title = "Top 10 earning skills", 
-       x = "Skill", y = "Total earnings")
-
-anim <- plot + 
-    transition_states(Skills, transition_length = 4, wrap = FALSE) + 
-  shadow_mark() + 
-  enter_grow() +
-  enter_fade() + 
-  ease_aes('sine-in')
-  
-animate(anim)
-#anim_save("SkillsEarnings.gif", anim)
-```
-
-
 Because we have over 65,000 data points, we can use statistical methods that apply to data satisfying normality conditions (because of the central limit theorem).
 
-MAKE SURE TO INCLUDE TEST ASSUMPTIONS
 
 ## 5. Hypothesis Testing
+We consistently use the standard alpha-level of .05 as a basis for making conclusions for our hypothesis tests.
 
 ### Test 1: Is there a significant difference between employed males and non-males in their respective education levels?
 
-We first want to check whether there is a difference in the number of males vs non-males employed at every level of education.
-
-Because we have over 65,000 data points, we may use statistical methods that apply to data satisfying normality conditions (because of the central limit theorem).
-
-Hence, we use a series of two sample z tests to conduct our first set hypothesis tests.
-
-The assumptions we need to satisfy are:
-- Large sample size\
-- Data are collected as a simple random sample (so that observations are independent from one another)
-
-We first want to look at the individuals with a bachelor's degree.
 $H_0:$ There is no difference in the number of undergraduate males who are employed when compared to nonmales
+
 $H_a:$ There is a significant difference in the number of undergraduate males who are employed when compared to nonmales
 ```{r, two sample z test for proportions: undergraduate}
 # We first subset into the different education levels, here undergraduate
@@ -537,13 +334,10 @@ undergrad_nonmales_employed <- (subset(undergrad_nonmales, undergrad_nonmales$Em
 undergrad_employed_ztest <- prop.test(c(nrow(undergrad_male_employed), nrow(undergrad_nonmales_employed)), c(nrow(undergrad_male),nrow(undergrad_nonmales)))
 undergrad_employed_ztest
 ```
-The proportion of undergraduate males who are employed is: `r nrow(undergrad_male_employed)`/`r nrow(undergrad_male)`\
-The proportion of undergraduate nonmales who are employed is: `r nrow(undergrad_nonmales_employed)`/`r nrow(undergrad_nonmales)`\
-Our two sample z test statistic is: `r undergrad_employed_ztest$statistic` which has an associated p-value of `r undergrad_employed_ztest$p.value`.\
-At and alpha-level of .05 we fail to reject the null hypothesis and conclude that there is not a significant difference in the number of males vs nonmales who have a bachelor's degree and are employed.
+At an alpha-level of .05 we fail to reject the null hypothesis and conclude that there is not a significant difference in the number of males vs nonmales who have a bachelor's degree and are employed.
 
-We now look at individuals with a masters.
 $H_0:$ There is no difference in the number of males with a master's degree who are employed when compared to nonmales
+
 $H_a:$ There is a significant difference in the number of males with a master's degree who are employed when compared to nonmales
 
 ```{r, two sample z test for proportions: masters}
@@ -566,13 +360,10 @@ masters_employed_ztest <- prop.test(c(nrow(masters_male_employed), nrow(masters_
 masters_employed_ztest
 
 ```
-The proportion of males with a master's who are employed is: `r nrow(masters_male_employed)`/`r nrow(masters_male)`\
-The proportion of nonmales with a master's who are employed is: `r nrow(masters_nonmales_employed)`/`r nrow(masters_nonmales)`\
-Our two sample z test statistic is: `r masters_employed_ztest$statistic` which has an associated p-value of `r masters_employed_ztest$p.value`.\
 At and alpha-level of .05 we reject the null hypothesis and conclude that there is a significant difference in the number of males vs nonmales who have a master's degree and are employed.
 
-Finally, we examine individuals who have a doctorate degree.
 $H_0:$ There is no difference in the number of males with a PhD who are employed when compared to nonmales
+
 $H_a:$ There is a significant difference in the number of males with a PhDwho are employed when compared to nonmales
 ```{r, two sample z test for proportions: Phd}
 # We first subset into the different education levels, here PhD
@@ -592,22 +383,9 @@ phd_nonmales_employed <- (subset(phd_nonmales, phd_nonmales$Employment == "curre
 phd_employed_ztest <- prop.test(c(nrow(phd_male_employed), nrow(phd_nonmales_employed)), c(nrow(phd_male),nrow(phd_nonmales)))
 phd_employed_ztest
 ```
-The proportion of males with a master's who are employed is: `r nrow(phd_male_employed)`/`r nrow(phd_male)`\
-The proportion of nonmales with a master's who are employed is: `r nrow(phd_nonmales_employed)`/`r nrow(phd_nonmales)`\
-Our two sample z test statistic is: `r phd_employed_ztest$statistic` which has an associated p-value of `r phd_employed_ztest$p.value`.\
 At and alpha-level of .05 we fail to reject the null hypothesis and conclude that there is not a significant difference in the number of males vs nonmales who have a doctorate degree and are employed.
 
-In real-world scenarios, these results might suggest that, in certain employment contexts, master's education appears to be a distinguishing factor between males and non-males. This could reflect societal or industry biases, or possibly differing educational or career choices among genders. Companies keen on diversity might want to address such disparities in their recruitment and mentorship programs, ensuring opportunities aren't skewed by gender-based educational trends.
-
 ### Test 2: Does education level significantly impact employment in the technical field?
-Since we the number of known computer skills is continuous and we have more than two categories for level of education, we would like to conduct an ANOVA test to answer this question.
-
-The assumptions we need to satisfy are:
-- All 5 groups are normally distributed\
-- Homogeneity of variances\
-- Error terms are independent of each other
-
-Let's first visualize the question we are trying to answer by examining the boxplots for distribution of computer skills at all education levels.
 ```{r, ANOVA boxplots}
 loadPkg("ggplot2")
 ggplot(df_clean, aes(x=EdLevel, y=ComputerSkills)) + 
@@ -615,9 +393,8 @@ ggplot(df_clean, aes(x=EdLevel, y=ComputerSkills)) +
   labs(x="Education Level", y = "Number of Computer Skills")
 ```
 
-There seem to be at least some differences, and we solidify this by conducting our hypothesis test using ANOVA.
-
 $H_0:$: There is no significant difference in the average number of computer skills acquired when comparing all individuals at every level of education.
+
 $H_a:$ At least one education level group differs from the others in the average number of computer skills known.
 
 ```{r, ANOVA test}
@@ -632,15 +409,8 @@ mean_skills_Undergraduate = mean(subset(df_clean, EdLevel == "Undergraduate")$Co
 mean_skills_Master = mean(subset(df_clean, EdLevel == "Master")$ComputerSkills)
 mean_skills_PhD = mean(subset(df_clean, EdLevel == "PhD")$ComputerSkills)
 ```
-The average number of computer skills for\
-Other: `r mean_skills_Other`\
-No Higher Ed: `r mean_skills_NoHigherEd`\
-Undergraduate: `r mean_skills_Undergraduate`\
-Master's: `r mean_skills_Master`\
-PhD: `r mean_skills_PhD`\
-Our ANOVA F test statistic is 281.8 with p-value <2e-16. At an alpha-level of .05, we reject the null hypothesis. We conclude that there is at least one education level for which the average number of computer skills is different from the other groups.
+At an alpha-level of .05, we reject the null hypothesis. We conclude that there is at least one education level for which the average number of computer skills is different from the other groups.
 
-Since we have a highly significant p-value based on our ANOVA test above, we want to conduct a Post Hoc analysis of the test using the standard method, Tukey's HSD test.
 ```{r, Post Hoc Tukeys Test}
 tukeyRes <- TukeyHSD(anovaRes)
 tukeyRes
@@ -648,18 +418,10 @@ tukeyRes
 
 Since all p-values for every pairwise comparison was less than 0.05, we conclude that the average number of computer skills for every education level was significantly different from every other level of education.
 
-[real world conclusion; we could look at specific averages to determine which levels of education provide less or more computer skills i.e. quality vs quantity]
-
-In real-world terms, this suggests that as one progresses through higher levels of education, from no higher education to a PhD, there is a substantial increase in computer skills. For employers in the technical field, this could mean that candidates with advanced degrees might bring a higher level of expertise and proficiency in computer-related tasks. However, it's also essential to consider the quality versus quantity aspect: while a higher degree might indicate more extensive knowledge, it does not necessarily guarantee the quality or applicability of that knowledge in specific job roles.
-
 ### Test 3: Is age a significant factor in determining whether an individual is a professional developer or not?
-Now, since age is a continuous variable and the classification for professional development a categorical one, we would like to use a Chi square test of independence to determine whether the two variables are associated.
-
-The assumptions we need to satisfy are:
-- The data were drawn as a simple random sample\
-- All expected counts are greater than 5
 
 $H_0:$ Whether an individual is a professional developer or not is independent of their age.
+
 $H_a:$ Age and status of being a professional developer are associated with each other.
 ```{r, Chi square}
 # We need four categories: <35, NotDev; >35, NotDev; <35 Dev; >35 Dev
@@ -677,21 +439,11 @@ chisq_matrix <- matrix(c(nrow(dev_over35),nrow(dev_under35),nrow(notDev_over35),
 chitest = chisq.test(chisq_matrix)
 chitest
 ```
-Our chi square test statistic is `r chitest$statistic` with p-value `r chitest$p.value`. At an alpha-level of .05 we reject the null hypothesis. We conclude that age and being a professional developer are associated.
-
-This data might imply that certain age groups are more inclined or better positioned to pursue developer careers. For educational institutions, this insight can guide curriculum planning, targeting age groups that are more likely to transition into professional development.
+At an alpha-level of .05 we reject the null hypothesis. We conclude that age and being a professional developer are associated.
 
 ### Test 4: Does mental health influence previous salary?
-To answer our final question, we conduct a two sample t test to compare the mean salary between those with and without mental health issues. (We use a t test as opposed to its normal counterpart, a z test, even though we have a large sample, size since the population variance is unknown.)
-
-The assumptions we need to satisfy are:
-- The observations are independent of one another\
-- The data in each group were take from a simple random sample\
-- The data are relatively normally distributed
-- The data is continuous in nature\
-- Homogeneity of variances
-
 $H_0:$ Whether an individual is a professional developer or not is independent of their age.
+
 $H_a:$ Age and status of being a professional developer are associated with each other.
 ```{r, two sample t-test for means}
 # Subset the PreviousSalary for individuals with 'Yes' and 'No' in the MentalHealth column
@@ -707,19 +459,169 @@ ttest_2sample_salary_yes_no <- t.test(salary_yes, salary_no)
 ttest_2sample_salary_yes_no
 
 ```
-The average salary for those who responded\ 
-'yes' to having mental health issues: $72,709.47\
-'no' to having mental health issues: $64,652.15\
-Our t test statistic is `r ttest_2sample_salary_yes_no$statistic` with p-value `r ttest_2sample_salary_yes_no$p.value`. At an alpha-level of .05 we reject the null hypothesis. We conclude that the mean salary of those with mental health issues is significantly different (in this case, higher) than those without.
+At an alpha-level of .05 we reject the null hypothesis. We conclude that the mean salary of those with mental health issues is significantly different (in this case, higher) than those without.
 
-This shows that those acknowledging mental health issues earned between $7,141 to $8,973 more than those who didn't. This suggests that a higher salary often carries added responsibilities, leading to stress and potential mental health challenges. Companies and HR teams can use this insight to monitor employee well-being. Job seekers should also be aware that higher salaries might come with increased mental health considerations, aiding them in making informed decisions.
+## 6. Data Preparation
+In preparation for model building, we want to check if the data types are accurate, encode categorical variables, scale any parameters if needed, perform feature engineering, and check for severe data imbalance.
+```{r, data prep checking}
+str(df_final)
+```
+From our EDA section, we see that all variables have been converted to their correct, respective data types. We still leave the "Country" variable as is, since there are far too many variables for practical analysis based on the methods we currently know. (Perhaps we can consider smaller analysis by subsetting the data based on "Country".) 
 
-## 6. Conclusions/Key Takeaways
+Now, we will encode our categorical variables; namely `Age`, `Accessibility`, `EdLevel`, `Employment`, `Gender`, `MentalHealth`, and `MainBranch` (leaving "Country" as it is).
 
-## 7. Limitations
+Since `Age` and `EdLevel` are ordinal variables, we use ordinal encoding to prepare this subset of categorical data.\
+Now, `Accessibility`, `Employment`, `MentalHealth`, `MainBranch` are nominal variables with just 2 categories within them, so one-hot encoding them will just unnecessarily create more features, so we will label encode them.
 
-The dataset mainly covers the tech industry and has more males from Stack Overflow, so it might not fully represent the wider job market. It would have been better if we had details on soft skills, cultural fit, and specific job roles. There are more men than women in the data. Without currency details for 'PreviousSalary', it's hard to compare salaries. Also, since age is grouped and not exact, it's less detailed.
 
-## 8. Further Research
+```{r, ordinal encoding}
+#saving df_final copy
+df_enc = df_final
 
-For the future, we have two main suggestions. First, we recommend doing an EEPEN analysis to look more closely at specific things like age or where someone is from. This will give us clearer ideas about those areas. Second, we think it's a good idea to use the data to make models that can guess if someone will get a job. As we learn more, we can make these models better.
+# We first want to set age as an ordinal factor:
+df_enc$Age = factor(df_enc$Age, ordered = T, 
+                          levels = c("<35", ">35"))
+# EdLevel was already converted to an ordinal variable in the EDA section so we can proceed
+
+# Now we can conduct label encoding on Age and Education Level:
+df_enc$Age <- as.numeric(df_enc$Age)
+df_enc$EdLevel <- as.numeric(df_enc$EdLevel)
+df_enc$Accessibility <- as.numeric(df_enc$Accessibility)
+df_enc$Employment <- as.numeric(df_enc$Employment)
+df_enc$MentalHealth <- as.numeric(df_enc$MentalHealth)
+df_enc$MainBranch <- as.numeric(df_enc$MainBranch)
+
+```
+
+`Gender` has 3 categories and is nominal, so we will use the one-hot-encoding method.
+
+```{r, one hot encoding}
+# subsetting the dataframe to select those cateogrical variables that require one hot encoding:
+one_hot_df <- subset(df_enc, select = Gender)
+
+#performing one hot encoding
+one_hot_df <- one_hot(as.data.table(one_hot_df))
+
+# saving the dataframe before one hot encoding:
+df_before_oneHot <- df_enc
+
+# dropping the categorical variables that we just performed one hot encoding on and adding the new columns:
+drops <- "Gender"
+df_enc <- df_enc[ , !(names(df_enc) %in% drops)]
+
+df_enc <- cbind(df_enc, one_hot_df)
+
+```
+
+We can't really work with `HaveWorkedWith` column, it is too messy. The `ComputerSkills` feature is built on top of it so we'll be using this.
+
+```{r column remove}
+df_enc <- subset(df_enc, select = -c(HaveWorkedWith))
+```
+
+
+*This will be experimented upon for model building*
+
+```{r one hot country}
+# one-hot encode Country here
+# df_enc$Country = factor(df_enc$Country)
+# df_enc <- subset(cbind(df_enc, one_hot(as.data.table(df_enc$Country))), select = -c(Country))
+
+# str(df_enc)
+```
+
+
+``` {r}
+df_final2 <- subset(df_enc, select = -c(Country))
+# head(df_final2)
+str(df_final2)
+```
+
+Finally, for the numerical variables in the train set, we want to scale them.
+```{r standardization}
+df_final2 <- df_final2 %>%
+  mutate_at(vars('YearsCode', 'YearsCodePro', 'PreviousSalary', 'ComputerSkills'), scale)
+```
+
+
+SOME INSTRUCTIONS FOR NOW:\
+Standardization is not a necessity. Experiment with standardized and non standardized data in model building. There is also another way of feature scaling called normalization, which scales the data into the range 0 and 1. In general, normalization works better for KNN(since this doesn't assume normal distribution), and, standardization works better for PCA. For Tree algorithms, scaling may hinder performance.
+
+## 7. Model Building
+
+```{r train test split}
+data_sample <- sample(c(TRUE, FALSE), nrow(df_final2), replace=TRUE, prob=c(0.8, 0.2))
+train <- df_final2[data_sample, ]
+test <- df_final2[!data_sample, ]
+
+# x_train = subset(train, select = -c(Employed))
+# x_test = subset(test, select = -c(Employed))
+# y_train = subset(train, select = c(Employed))
+# y_test = subset(test, select = c(Employed))
+# 
+# head(x_train)
+# head(x_test)
+# head(y_train)
+# head(y_test)
+```
+
+For our work, I'm dividing this into 4 sections where each of us will experiment with different models
+
+## Sajan
+
+```{r Basic logistic regression}
+lr_model <- glm(Employed~., data = train, family = "binomial")
+summary(lr_model)
+
+
+```
+Let's do a quick class imbalance check before deciding on the evaluation metric.
+
+``` {r Imbalance check}
+ggplot(data = df_final, aes(Employed, after_stat(count))) + 
+  geom_bar(alpha = 0.5)
+
+```
+
+Since there's no such major imbalance, and we want to know the overall performance of the model, we'll use AUC ROC as our evaluation metric
+
+```{r AUC ROC Evaluation}
+pred=predict(lr_model, test, type = "response" )
+# test$prob=prob
+roc_lr <- roc(test$Employed, pred)
+auc(roc_lr) # area-under-curve prefer 0.8 or higher.
+plot(roc_lr)
+
+
+```
+
+
+
+## Sandhya
+
+
+
+## Nema
+```{r, Classification tree}
+# Still a work in progress
+set.seed(1)
+employfit <- rpart(Employed ~ ., data=df_final, method="class", control = list(maxdepth = 4) )
+
+printcp(employfit) # display the results 
+plotcp(employfit) # visualize cross-validation results 
+summary(employfit) # detailed summary of splits
+
+# plot tree 
+plot(employfit, uniform=TRUE, main="Classification Tree for Employment")
+text(employfit, use.n=TRUE, all=TRUE, cex=.8)
+```
+
+
+
+## Pavan
+
+
+
+
+
+
