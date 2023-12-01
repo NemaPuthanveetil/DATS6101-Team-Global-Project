@@ -31,6 +31,8 @@ knitr::opts_chunk$set(echo = TRUE)
 # install.packages("data.table")
 # install.packages("MLmetrics")
 # install.packages("rpart")
+# install.packages("class")
+# install.packages("e1071")
 library(mltools)
 library(data.table)
 library(ggplot2)
@@ -43,6 +45,8 @@ library(gifski)
 library(pROC)
 library(MLmetrics)
 library(rpart)
+library(class)
+library(e1071)
 
 ```
 
@@ -598,6 +602,33 @@ plot(roc_lr)
 
 
 ## Sandhya
+
+
+```{r, KNN model}
+train_data <- train[, names(train) != "Employed"]
+test_data <- test[, names(test) != "Employed"]
+train_labels <- train$Employed
+
+# KNN model with k = 3
+k <- 3
+knn_pred <- knn(train = train_data, test = test_data, cl = train_labels, k = k)
+
+# Accuracy Calculation
+accuracy <- sum(knn_pred == test$Employed) / nrow(test)
+print(accuracy)
+
+```
+
+```{r}
+# Assuming numeric features
+train_scaled <- scale(train[, sapply(train, is.numeric)])
+train_scaled$Employed <- train$Employed  # Adding the target variable back
+svm_model <- svm(Employed ~ ., data = train_scaled, kernel = "linear", probability = TRUE)
+
+# Make predictions
+svm_predictions <- predict(svm_model, test_data, probability = TRUE)
+
+```
 
 
 
