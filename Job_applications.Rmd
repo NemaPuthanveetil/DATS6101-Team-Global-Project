@@ -633,21 +633,57 @@ svm_predictions <- predict(svm_model, test_data, probability = TRUE)
 
 
 ## Nema
-```{r, Classification tree}
-# Still a work in progress
+```{r, Growing and Plotting the Decision tree}
+# Growing the tree
 set.seed(1)
-employfit <- rpart(Employed ~ ., data=df_final, method="class", control = list(maxdepth = 4) )
+# employfit <- rpart(Employed ~ Age + Accessibility + EdLevel + Employment + MentalHealth + MainBranch + YearsCode + YearsCodePro + PreviousSalary + Gender_Man + Gender_NonBinary + Gender_Woman, data=train)
+employfit <- rpart(Employed ~ ., data=df_final2)
 
 printcp(employfit) # display the results 
 plotcp(employfit) # visualize cross-validation results 
 summary(employfit) # detailed summary of splits
+printcp(employfit)
 
 # plot tree 
-plot(employfit, uniform=TRUE, main="Classification Tree for Employment")
-text(employfit, use.n=TRUE, all=TRUE, cex=.8)
+loadPkg("rpart.plot")
+rpart.plot(employfit, main="Decision Tree for Employment")
+
+## Should we include analysis on what happens when we don't include ComputerSkills?
 ```
 
+```{r, Pruning and Plotting the Decision Tree}
+#prune the tree 
+pemployfit <- prune(employfit, cp = employfit$cptable[2,"CP"])
+#pemployfit <- prune(employfit, cp = employfit$cptable[which.min( employfit$cptable[,"xerror"] ),"CP"])
 
+
+rpart.plot(pemployfit, main="Pruned Decision Tree for Employment")
+```
+
+```{r, Decision Tree ROC and AUC}
+p1 <- predict(pemployfit, test, type = 'prob')
+p1 <- p1[,2]
+r <- roc(test$Employed, p1, percent = TRUE)
+auc(r)
+plot(r)
+```
+```{r, Logistic Regression test}
+lr_model_test <- glm(Employed ~ Age + Accessibility + EdLevel + Employment + MentalHealth + MainBranch + YearsCode + YearsCodePro + PreviousSalary + Gender_Man + Gender_NonBinary + Gender_Woman, data = train, family = "binomial")
+summary(lr_model_test)
+
+pred=predict(lr_model_test, test, type = "response" )
+# test$prob=prob
+roc_lr_test <- roc(test$Employed, pred)
+auc(roc_lr_test) # area-under-curve prefer 0.8 or higher.
+plot(roc_lr_test)
+
+```
+
+```{r, Random Forest}
+library(randomForest)
+rf <- randomForest(Employed ~., data=train, proximity=TRUE) 
+print(rf)
+```
 
 ## Pavan
 
