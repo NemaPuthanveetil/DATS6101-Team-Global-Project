@@ -47,6 +47,7 @@ library(MLmetrics)
 library(rpart)
 library(class)
 library(e1071)
+library(ROCR)
 
 ```
 
@@ -540,7 +541,15 @@ df_final2 <- subset(df_enc, select = -c(Country))
 # head(df_final2)
 str(df_final2)
 ```
+Let's do a quick class imbalance check.
 
+``` {r Imbalance check}
+ggplot(data = df_final2, aes(Employed, after_stat(count))) + 
+  geom_bar(alpha = 0.5, col = 'navy')
+
+```
+
+Since there's no such major imbalance, we don't need to resample our data in any way and we can proceed normally.\
 Finally, for the numerical variables in the train set, we want to scale them.
 ```{r standardization}
 df_final2 <- df_final2 %>%
@@ -573,64 +582,62 @@ For our work, I'm dividing this into 4 sections where each of us will experiment
 
 ## Sajan
 
-```{r Basic logistic regression}
+```{r Logistic regression}
 lr_model <- glm(Employed~., data = train, family = "binomial")
 summary(lr_model)
 
 
 ```
-Let's do a quick class imbalance check before deciding on the evaluation metric.
 
-``` {r Imbalance check}
-ggplot(data = df_final, aes(Employed, after_stat(count))) + 
-  geom_bar(alpha = 0.5)
+Since we do not have unbalanced data (for our target column), and we want to know the overall performance of the model, we'll use AUC ROC as our evaluation metric.
 
-```
-
-Since there's no such major imbalance, and we want to know the overall performance of the model, we'll use AUC ROC as our evaluation metric
-
-```{r AUC ROC Evaluation}
+```{r LR- AUC ROC Evaluation}
 pred=predict(lr_model, test, type = "response" )
 # test$prob=prob
 roc_lr <- roc(test$Employed, pred)
 auc(roc_lr) # area-under-curve prefer 0.8 or higher.
-plot(roc_lr)
+plot(roc_lr, print.auc = T, main = "ROC Curve for SVM Model", col = "#514BA2", lwd = 2)
 
 
 ```
-
-
+We obtain an Area under the curve as `r auc(lr_model)` which is an amazing value, so the Logistic regression model works well.
 
 ## Sandhya
 
-
-```{r, KNN model}
+```{r KNN model}
 train_data <- train[, names(train) != "Employed"]
 test_data <- test[, names(test) != "Employed"]
 train_labels <- train$Employed
 
 # KNN model with k = 3
 k <- 3
-knn_pred <- knn(train = train_data, test = test_data, cl = train_labels, k = k)
-
-# Accuracy Calculation
-accuracy <- sum(knn_pred == test$Employed) / nrow(test)
-print(accuracy)
-
+knn_model <- class::knn(train = train_data, test = test_data, cl = train_labels, k = k, prob=TRUE)
 ```
+
+```{r r KNN- AUC ROC Evaluation}
+roc_knn <-roc(test$Employed, attributes(knn_model)$prob)
+auc(roc_knn)
+plot(roc_knn, print.auc = T, main = "ROC Curve for KNN Model", col = "#514BA2", lwd = 2)
+```
+The KNN Model doesn't give us a good result, unfortunately.
 
 ```{r}
 # Assuming numeric features
-train_scaled <- scale(train[, sapply(train, is.numeric)])
-train_scaled$Employed <- train$Employed  # Adding the target variable back
-svm_model <- svm(Employed ~ ., data = train_scaled, kernel = "linear", probability = TRUE)
+# train_scaled <- scale(train[, sapply(train, is.numeric)])
+# train_scaled$Employed <- train$Employed  # Adding the target variable back
+svm_model <- svm(Employed ~ ., data = train, kernel = "linear", probability = TRUE)
 
 # Make predictions
-svm_predictions <- predict(svm_model, test_data, probability = TRUE)
+svm_predictions <- predict(svm_model, test, probability = TRUE)
 
 ```
 
+```{r r SVM- AUC ROC Evaluation}
+# roc_svm <- roc(test$Employed, as.numeric(svm_predictions))
+# auc(roc_svm)
+plot(roc_svm, print.auc = T, main = "ROC Curve for SVM Model", col = "#514BA2", lwd = 2)
 
+```
 
 ## Nema
 ```{r, Classification tree}
