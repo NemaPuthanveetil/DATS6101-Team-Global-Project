@@ -680,9 +680,22 @@ plot(roc_lr_test)
 ```
 
 ```{r, Random Forest}
-library(randomForest)
-rf <- randomForest(Employed ~., data=train, proximity=TRUE) 
-print(rf)
+# library(randomForest)
+# rf <- randomForest(Employed ~., data=train, proximity=TRUE) 
+# print(rf)
+
+
+# library(doParallel)
+# cl <- makeCluster(detectCores())
+# registerDoParallel(cl)
+# 
+# rf <- randomForest(Employed ~ ., data = train, proximity = TRUE, ntree = 100, mtry = 3)
+# 
+# stopCluster(cl)  # Stop the parallel processing cluster
+
+# rf <- randomForest(Employed ~ ., data = train, proximity = TRUE, ntree = 50, mtry = 2)
+
+# Nope :D
 ```
 
 ## Pavan
