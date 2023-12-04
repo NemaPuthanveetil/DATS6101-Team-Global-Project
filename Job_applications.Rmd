@@ -33,7 +33,7 @@ knitr::opts_chunk$set(echo = TRUE)
 # install.packages("rpart")
 # install.packages("class")
 # install.packages("e1071")
-loadPkg("rpart.plot")
+library(rpart.plot)
 library(mltools)
 library(data.table)
 library(ggplot2)
@@ -584,10 +584,8 @@ pred=predict(lr_model, test, type = "response" )
 roc_lr <- roc(test$Employed, pred)
 auc(roc_lr) # area-under-curve prefer 0.8 or higher.
 plot(roc_lr, print.auc = T, main = "ROC Curve for SVM Model", col = "#514BA2", lwd = 2)
-
-
 ```
-We obtain an Area under the curve as `r auc(lr_model)` which is an amazing value, so the Logistic regression model works well.
+We obtain an Area under the curve as `r auc(roc_lr)` which is an amazing value, so the Logistic regression model works well.
 
 ```{r KNN model}
 train_data <- train[, names(train) != "Employed"]
@@ -599,7 +597,7 @@ k <- 3
 knn_model <- class::knn(train = train_data, test = test_data, cl = train_labels, k = k, prob=TRUE)
 ```
 
-```{r r KNN- AUC ROC Evaluation}
+```{r KNN- AUC ROC Evaluation}
 roc_knn <-roc(test$Employed, attributes(knn_model)$prob)
 auc(roc_knn)
 plot(roc_knn, print.auc = T, main = "ROC Curve for KNN Model", col = "#514BA2", lwd = 2)
