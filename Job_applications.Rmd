@@ -689,10 +689,46 @@ plot(roc_lr_test)
 # Nope :D
 ```
 
-## Pavan
+```{r, q3 Decision Tree}
+set.seed(1)
+employfit3 <- rpart(Employed ~ Age +  EdLevel + ComputerSkills, data=train)
 
+printcp(employfit3) # display the results 
+plotcp(employfit3) # visualize cross-validation results 
+summary(employfit3) # detailed summary of splits
+printcp(employfit3)
 
+# plot tree 
+loadPkg("rpart.plot")
+rpart.plot(employfit3, main="Decision Tree for Employment")
 
+p1 <- predict(employfit3, test, type = 'prob')
+p1 <- p1[,2]
+r <- roc(test$Employed, p1, percent = TRUE)
+auc(r)
+plot(r)
+```
+```{r, Decision Tree Tuning, message=FALSE}
+minsplit_vals <- c(2, 3, 5, 7, 10, 12, 15, 17, 20, 23, 27, 30, 45, 50, 75, 91, 100)
+max_depth_vals <- c(2, 3, 5, 7, 10, 12, 15, 17, 20, 23, 27, 30)
 
+# minsplit_vals <- c(10456)
+# max_depth_vals <- c(24)
 
+auc_values = c()
 
+# Nested for loop to iterate through all combinations
+for (minsplit_val in minsplit_vals) {
+  for (max_depth_val in max_depth_vals) {
+    # employfit_loop <- rpart(Employed ~ Age + Accessibility + EdLevel + Employment + MentalHealth + MainBranch + YearsCode + YearsCodePro + PreviousSalary + Gender_Man + Gender_NonBinary + Gender_Woman, data=train, minsplit = minsplit_val, maxdepth = max_depth_val)
+    employfit_loop <- rpart(Employed ~ ., data=train, minsplit = minsplit_val, maxdepth = max_depth_val)
+    p1_loop <- predict(employfit_loop, test, type = 'prob')
+    p1_loop <- p1_loop[,2]
+    r_loop <- roc(test$Employed, p1_loop, percent = TRUE)
+    AUC_val <- auc(r_loop)
+    auc_values <- c(auc_values, AUC_val)
+    print(paste('The AUC value for model with minsplit =', minsplit_val, 'and maxdepth =', max_depth_val, 'is', round(AUC_val, digits = 2), '%'))
+  }
+}
+max(auc_values)
+```
