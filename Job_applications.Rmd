@@ -583,7 +583,7 @@ pred=predict(lr_model, test, type = "response" )
 # test$prob=prob
 roc_lr <- roc(test$Employed, pred)
 auc(roc_lr) # area-under-curve prefer 0.8 or higher.
-plot(roc_lr, print.auc = T, main = "ROC Curve for SVM Model", col = "#514BA2", lwd = 2)
+plot(roc_lr, print.auc = T, main = "ROC Curve for LR Model", col = "#514BA2", lwd = 2)
 ```
 We obtain an Area under the curve as `r auc(roc_lr)` which is an amazing value, so the Logistic regression model works well.
 
@@ -648,11 +648,11 @@ rpart.plot(pemployfit, main="Pruned Decision Tree for Employment")
 ```
 
 ```{r, Decision Tree ROC and AUC}
-p1 <- predict(pemployfit, test, type = 'prob')# instead of p1 dt_pred
+p1 <- predict(employfit, test, type = 'prob')# instead of p1 dt_pred
 p1 <- p1[,2]
-r <- roc(test$Employed, p1, percent = TRUE)# roc_dt
+r <- roc(test$Employed, p1)# roc_dt
 auc(r)
-plot(r)
+plot(r, print.auc = T, main = "ROC Curve for Decistion Tree Model", col = "#514BA2", lwd = 2)
 ```
 
 It does give a good enough result. The Logistic Regression model outperforms this but it's still a decent model. Also, we can conclude that there is a notable difference between the result of distance based model(KNN) and tree based model(Decision Tree) for our data. Tree models work a lot better.
@@ -705,7 +705,7 @@ lr_model3 <- glm(Employed~Age +  EdLevel + ComputerSkills, data = train, family 
 pred3=predict(lr_model3, test, type = "response" )
 roc_lr3 <- roc(test$Employed, pred3)
 auc(roc_lr3) # area-under-curve prefer 0.8 or higher.
-plot(roc_lr3, print.auc = T, main = "ROC Curve for LR Model (With 3 variables)", col = "#514BA2", lwd = 2)
+plot(roc_lr3, print.auc = T, main = "ROC Curve for LR Model [Age +Edlevel + ComputerSkills]", col = "#514BA2", lwd = 2)
 ```
 We observe an AUC value of 0.869, which is just a little less than our original AUC of 0.872. This means that our assumption of `Age`, `EdLevel` and `ComputerSkills` being the most important factors to get hired was true. In fact, as per our model, we could practically ignore the rest of the factors. 
 
