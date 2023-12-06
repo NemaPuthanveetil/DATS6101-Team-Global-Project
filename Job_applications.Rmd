@@ -25,8 +25,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 
 ```{r Libraries}
-# uncomment and run the below line to install the required packages
-#install.packages(c("gganimate", "png", "gifski"))
+# Uncomment and run the below line to install the required packages
+# install.packages(c("gganimate", "png", "gifski"))
 # install.packages("mltools")
 # install.packages("data.table")
 # install.packages("MLmetrics")
@@ -57,7 +57,7 @@ df = data.frame(read.csv('stackoverflow_full.csv', header = TRUE))
 xkabledplyhead(df, title = "Job Applicants Data")
 ```
 ```{r Structure}
-#structure of a data frame 
+# Structure of a data frame 
 str(df) 
 ```
 
@@ -88,7 +88,7 @@ head(subset(df, select = c(names(df)[sapply(df, is.numeric)])))
 ```
 
 
-```{r numeric feature cleaning}
+```{r Numeric feature cleaning}
 df_clean <- subset(df, select = -c(Index))
 df_clean$Employment = as.character(df_clean$Employment)
 df_clean$Employment[df_clean$Employment == "1"] <- "currently_employed"
@@ -103,7 +103,7 @@ str(df_clean)
 
 Now let's take a look at the character columns.
 
-```{r char columns}
+```{r Char columns}
 # Extract the character columns
 head(subset(df_clean, select = c(names(df)[sapply(df, is.character)])))
 
@@ -217,7 +217,7 @@ Let's first try to get a good picture of the data which will act as the 1st step
 
 ggplot(data = subset(df_final, subset = Employed=='hired'), aes(EdLevel, after_stat(count))) + 
   geom_bar(aes(fill = Gender), position = 'dodge', alpha = 0.5) +
-  labs(title = "Education Level by gender for employed workers", x="Education Level", y="Count")
+  labs(title = "Education Level by Gender for Employed Workers", x="Education Level", y="Count")
 
 ```
 
@@ -269,6 +269,7 @@ We notice that the mean previous salary of applicants having mental health issue
 
 Let's try digging a bit deeper into the data to get additional insights.
 Let's try to extract the most used skill-
+
 ```{r skills extraction}
 
 df_final %>%
@@ -309,6 +310,7 @@ anim <- plot +
 animate(anim)
 #anim_save("Skills.gif", anim)
 ```
+
 Because we have over 65,000 data points, we can use statistical methods that apply to data satisfying normality conditions (because of the central limit theorem).
 
 
@@ -413,6 +415,7 @@ mean_skills_Undergraduate = mean(subset(df_clean, EdLevel == "Undergraduate")$Co
 mean_skills_Master = mean(subset(df_clean, EdLevel == "Master")$ComputerSkills)
 mean_skills_PhD = mean(subset(df_clean, EdLevel == "PhD")$ComputerSkills)
 ```
+
 At an alpha-level of .05, we reject the null hypothesis. We conclude that there is at least one education level for which the average number of computer skills is different from the other groups.
 
 ```{r, Post Hoc Tukeys Test}
@@ -436,6 +439,7 @@ dev_over35 <- subset(df_clean, df_clean$Age == ">35" & df_clean$MainBranch == "D
 ```
 
 The contingency table that we perform our chi square test on is the following:
+
 ```{r, Chi square table}
 chisq_matrix <- matrix(c(nrow(dev_over35),nrow(dev_under35),nrow(notDev_over35),nrow(notDev_under35)), nrow = 2, ncol = 2)
 
@@ -443,12 +447,14 @@ chisq_matrix <- matrix(c(nrow(dev_over35),nrow(dev_under35),nrow(notDev_over35),
 chitest = chisq.test(chisq_matrix)
 chitest
 ```
+
 At an alpha-level of .05 we reject the null hypothesis. We conclude that age and being a professional developer are associated.
 
 ### Test 4: Does mental health influence previous salary?
 $H_0:$ Whether an individual is a professional developer or not is independent of their age.
 
 $H_a:$ Age and status of being a professional developer are associated with each other.
+
 ```{r, two sample t-test for means}
 # Subset the PreviousSalary for individuals with 'Yes' and 'No' in the MentalHealth column
 salary_yes <- df_clean$PreviousSalary[df_clean$MentalHealth == "Yes"]
@@ -463,20 +469,22 @@ ttest_2sample_salary_yes_no <- t.test(salary_yes, salary_no)
 ttest_2sample_salary_yes_no
 
 ```
+
 At an alpha-level of .05 we reject the null hypothesis. We conclude that the mean salary of those with mental health issues is significantly different (in this case, higher) than those without.
 
 ## 6. Data Preparation
 In preparation for model building, we want to check if the data types are accurate, encode categorical variables, scale any parameters if needed, perform feature engineering, and check for severe data imbalance.
+
 ```{r, data prep checking}
 str(df_final)
 ```
+
 From our EDA section, we see that all variables have been converted to their correct, respective data types. We still leave the "Country" variable as is, since there are far too many variables for practical analysis based on the methods we currently know. (Perhaps we can consider smaller analysis by subsetting the data based on "Country".) 
 
 Now, we will encode our categorical variables; namely `Age`, `Accessibility`, `EdLevel`, `Employment`, `Gender`, `MentalHealth`, and `MainBranch` (leaving "Country" as it is).
 
 Since `Age` and `EdLevel` are ordinal variables, we use ordinal encoding to prepare this subset of categorical data.\
 Now, `Accessibility`, `Employment`, `MentalHealth`, `MainBranch` are nominal variables with just 2 categories within them, so one-hot encoding them will just unnecessarily create more features, so we will label encode them.
-
 
 ```{r, ordinal encoding}
 #saving df_final copy
@@ -534,7 +542,6 @@ df_enc <- subset(df_enc, select = -c(HaveWorkedWith))
 # str(df_enc)
 ```
 
-
 ``` {r}
 df_final2 <- subset(df_enc, select = -c(Country))
 # head(df_final2)
@@ -542,6 +549,7 @@ str(df_final2)
 ```
 
 Finally, for the numerical variables in the train set, we want to scale them.
+
 ```{r standardization}
 df_final2 <- df_final2 %>%
   mutate_at(vars('YearsCode', 'YearsCodePro', 'PreviousSalary', 'ComputerSkills'), scale)
@@ -579,6 +587,7 @@ summary(lr_model)
 
 
 ```
+
 Let's do a quick class imbalance check before deciding on the evaluation metric.
 
 ``` {r Imbalance check}
@@ -619,17 +628,18 @@ print(accuracy)
 
 ```
 
+As we can see above, our KNN model, with k = 3, was able to predict whether someone is employed (`hired` or `not_hired`) with an accuracy of 72%.
+
 ```{r}
 # Assuming numeric features
 train_scaled <- scale(train[, sapply(train, is.numeric)])
 train_scaled$Employed <- train$Employed  # Adding the target variable back
 svm_model <- svm(Employed ~ ., data = train_scaled, kernel = "linear", probability = TRUE)
 
-# Make predictions
+# Make predictions. This SVM model consumes more than 4+ GB of RAM during runtime. We need to scale down the data we're passing to it.
 svm_predictions <- predict(svm_model, test_data, probability = TRUE)
 
 ```
-
 
 
 ## Nema
