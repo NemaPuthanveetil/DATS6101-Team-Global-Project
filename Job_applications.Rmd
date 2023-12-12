@@ -526,16 +526,7 @@ We can't really work with `HaveWorkedWith` column, it is too messy. The `Compute
 df_enc <- subset(df_enc, select = -c(HaveWorkedWith))
 ```
 
-
-*This will be experimented upon for model building*
-
-```{r one hot country}
-# one-hot encode Country here
-# df_enc$Country = factor(df_enc$Country)
-# df_enc <- subset(cbind(df_enc, one_hot(as.data.table(df_enc$Country))), select = -c(Country))
-
-# str(df_enc)
-```
+The country column was experimented with but didn't give good results and was hence removed.
 
 
 ``` {r}
