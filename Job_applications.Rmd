@@ -637,9 +637,9 @@ rpart.plot(dt_model, main="Decision Tree for Employment")
 ```{r, Decision Tree ROC and AUC}
 dt_pred <- predict(dt_model, test, type = 'prob')# instead of p1 dt_pred
 dt_pred <- dt_pred[,2]
-r <- roc(test$Employed, dt_pred)# roc_dt
-auc(r)
-plot(r, print.auc = T, main = "ROC Curve for Decistion Tree Model", col = "#514BA2", lwd = 2)
+roc_dt <- roc(test$Employed, dt_pred)# roc_dt
+auc(roc_dt)
+plot(roc_dt, print.auc = T, main = "ROC Curve for Decistion Tree Model", col = "#514BA2", lwd = 2)
 ```
 
 It does give a good enough result. The Logistic Regression model outperforms this but it's still a decent model. Also, we can conclude that there is a notable difference between the result of distance based model(KNN) and tree based model(Decision Tree) for our data. Tree models work a lot better.
@@ -712,7 +712,7 @@ rpart.plot(dt_model3, main="Decision Tree for Employment")
 
 p1 <- predict(dt_model3, test, type = 'prob')
 p1 <- p1[,2]
-r <- roc(test$Employed, p1, percent = TRUE)
-auc(r)
-plot(r)
+roc_dt3 <- roc(test$Employed, p1, percent = TRUE)
+auc(roc_dt3)
+plot(roc_dt3)
 ```
