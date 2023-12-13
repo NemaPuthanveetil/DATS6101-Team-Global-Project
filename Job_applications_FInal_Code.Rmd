@@ -124,13 +124,15 @@ df_clean$MainBranch = factor(df_clean$MainBranch)
 str(df_clean)
 ```
 
-Now we remove faulty data where their professional coding experience is more than their coding experience. 
+We remove faulty data where their professional coding experience is more than their coding experience. 
+
 ```{r remove faulty data}
 
 nrow(subset(df_clean, subset = df_clean$YearsCode<df_clean$YearsCodePro))
 df_clean = subset(df_clean, subset = df_clean$YearsCode>df_clean$YearsCodePro)
 
 ```
+
 We observe 588 such records and remove them.
 
 Let's take a look at some plots and distribution in order to deal with outliers.
@@ -179,11 +181,9 @@ Lets take a look at the final data now:
 ```{r final data}
 df_final <- df_clean
 xkabledplyhead(df_final, title = "Final Data")
-
 ```
 
 ```{r Final Data Basic Info}
-
 # Getting the number of categorical and numerical columns
 cat_cols <- colnames(subset(df_final, select = c(names(df_final)[(sapply(df_final, is.factor)) | 
                                                        (sapply(df_final, is.ordered)) | 
@@ -197,7 +197,6 @@ cat("Rows:", dim(df_final)[1], "\n")
 cat("Columns:", dim(df_final)[2], "\n")
 cat("Numerical columns:", num_cols, "\n")
 cat("Categorical Columns:", cat_cols, "\n")
-
 ```
 
 ## 4. EDA
@@ -235,12 +234,14 @@ ggplot(data = df_final, aes(x = MentalHealth, y = PreviousSalary)) +
 ```
 
 ## 5. Hypothesis Testing
+
 We consistently use the standard alpha-level of .05 as a basis for making conclusions for our hypothesis tests.
 
 ### Test 1: Is there a significant difference between employed males and non-males in their respective education levels?
 
 Bachelor's degree:
 ```{r, two sample z test for proportions: undergraduate}
+
 # We first subset into the different education levels, here undergraduate
 undergrad <- subset(df_clean, df_clean$EdLevel == "Undergraduate")
 
@@ -258,7 +259,9 @@ undergrad_nonmales_employed <- (subset(undergrad_nonmales, undergrad_nonmales$Em
 undergrad_employed_ztest <- prop.test(c(nrow(undergrad_male_employed), nrow(undergrad_nonmales_employed)), c(nrow(undergrad_male),nrow(undergrad_nonmales)))
 undergrad_employed_ztest
 ```
+
 Master's degree:
+
 ```{r, two sample z test for proportions: masters}
 # We first subset into the different education levels, here masters
 masters <- subset(df_clean, df_clean$EdLevel == "Master")
@@ -279,7 +282,9 @@ masters_employed_ztest <- prop.test(c(nrow(masters_male_employed), nrow(masters_
 masters_employed_ztest
 
 ```
+
 PhD:
+
 ```{r, two sample z test for proportions: Phd}
 # We first subset into the different education levels, here PhD
 phd <- subset(df_clean, df_clean$EdLevel == "PhD")
@@ -317,6 +322,7 @@ ttest_2sample_salary_yes_no
 ```
 
 ## 6. Data Preparation
+
 In preparation for model building, we want to check if the data types are accurate, encode categorical variables, scale any parameters if needed, perform feature engineering, and check for severe data imbalance.
 
 ```{r, data prep checking}
@@ -325,7 +331,8 @@ str(df_final)
 
 From our EDA section, we see that all variables have been converted to their correct, respective data types. Now, we will encode our categorical variables; namely `Age`, `Accessibility`, `EdLevel`, `Employment`, `Gender`, `MentalHealth`, and `MainBranch` (leaving "Country" as it is).
 
-Since `Age` and `EdLevel` are ordinal variables, we use ordinal encoding to prepare this subset of categorical data.`Accessibility`, `Employment`, `MentalHealth`, `MainBranch` are nominal variables with just 2 categories within them, so we will label encode them.
+Since `Age` and `EdLevel` are ordinal variables, we use ordinal encoding to prepare this subset of categorical data.\
+`Accessibility`, `Employment`, `MentalHealth`, `MainBranch` are nominal variables with just 2 categories within them, so we will label encode them.
 
 ```{r, ordinal encoding}
 #saving df_final copy
@@ -366,6 +373,7 @@ df_enc <- cbind(df_enc, one_hot_df)
 ```
 
 Removing`HaveWorkedWith` and `Country` columns.
+
 ```{r column remove}
 df_enc <- subset(df_enc, select = -c(HaveWorkedWith))
 df_final2 <- subset(df_enc, select = -c(Country))
@@ -379,7 +387,7 @@ ggplot(data = df_final2, aes(Employed, after_stat(count))) +
   geom_bar(alpha = 0.5, col = 'navy')
 ```
 
-Since there's no such major imbalance, we don't need to resample our data in any way and we can proceed normally.\
+There's no major imbalance.\
 Finally, for the numerical variables in the train set, we want to scale them.
 
 ```{r standardization}
@@ -391,6 +399,7 @@ df_final2 <- df_final2 %>%
 ## 7. Model Building
 
 We first split our dataset into train and test sets for modeling purposes.
+
 ```{r train test split}
 data_sample <- sample(c(TRUE, FALSE), nrow(df_final2), replace=TRUE, prob=c(0.8, 0.2))
 train <- df_final2[data_sample, ]
@@ -399,7 +408,8 @@ test <- df_final2[!data_sample, ]
 
 Since we do not have unbalanced data (for our target column), and we want to know the overall performance of the model, we'll use AUC ROC as our evaluation metric.
 
-Logistic Regression Model:
+**Logistic Regression Model:**
+
 ```{r Logistic Regression model}
 set.seed(47)
 lr_model <- glm(Employed~., data = train, family = "binomial")
@@ -416,7 +426,8 @@ auc(roc_lr)
 plot(roc_lr, print.auc = T, main = "ROC Curve for LR Model", col = "#514BA2", lwd = 2)
 ```
 
-KNN model:
+**KNN model:**
+
 ```{r KNN model}
 train_data <- train[, names(train) != "Employed"]
 test_data <- test[, names(test) != "Employed"]
@@ -433,7 +444,8 @@ auc(roc_knn)
 plot(roc_knn, print.auc = T, main = "ROC Curve for KNN Model", col = "#514BA2", lwd = 2)
 ```
 
-SVM model:
+**SVM model:**
+
 ```{r SVM model}
 svm_model <- svm(Employed ~ ., data = train, kernel = "linear", probability = TRUE)
 
@@ -447,7 +459,8 @@ auc(roc_svm)
 plot(roc_svm, print.auc = T, main = "ROC Curve for SVM Model", col = "#514BA2", lwd = 2)
 ```
 
-Decision Tree Classifier:
+**Decision Tree Classifier:**
+
 ```{r Decision Tree model}
 set.seed(47)
 dt_model <- rpart(Employed ~ ., data=df_final2)
@@ -489,7 +502,7 @@ for (minsplit_val in minsplit_vals) {
 max(auc_values)
 ```
 
-Even with hyperparameter tuning, we are getting the same model. Out of curiosity, let's try a model with everything except the number of computer skills.\
+Even with hyperparameter tuning, we are getting the same AUC ROC score. Out of curiosity, let's try a model with everything except the number of computer skills.\
 
 ```{r, DT without computer skills}
 dt_model_nocompskills <- rpart(Employed ~ Age + Accessibility + EdLevel + Employment + MentalHealth + MainBranch + YearsCode + YearsCodePro + PreviousSalary + Gender_Man + Gender_NonBinary + Gender_Woman, data=train)
@@ -503,7 +516,9 @@ plot(r, print.auc = T, main = "ROC Curve for Decistion Tree Model Without Comput
 ```
 
 
-We conclude that our best model is the Logistic Regression model. Let's use that to get an answer for the question: Can we predict with at least 60% accuracy whether an individual will be employed or not, based on just their age, education level and number of skills?
+We conclude that our best model is the Logistic Regression model. Let's use that to get an answer for the question:
+
+Can we predict with at least 60% accuracy whether an individual will be employed or not, based on just their age, education level and number of skills?
 
 ```{r Q3 Logistic Regression}
 set.seed(47)
@@ -514,25 +529,12 @@ roc_lr3 <- roc(test$Employed, pred3)
 auc(roc_lr3)
 plot(roc_lr3, print.auc = T, main = "ROC Curve for LR Model [Age +Edlevel + ComputerSkills]", col = "#514BA2", lwd = 2)
 ```
-We observe an AUC value of 0.869, which is just a little less than our original AUC of 0.872. This means that our assumption of `Age`, `EdLevel` and `ComputerSkills` being the most important factors to get hired was true. In fact, as per our model, we could practically ignore the rest of the factors. 
 
-NOT SURE WHAT THIS IS FOR, I THINK IT CAN BE DELETED:
-```{r Q3 Decision Tree}
-# set.seed(47)
-# dt_model3 <- rpart(Employed ~ Age +  EdLevel + ComputerSkills, data=train)
-# 
-# printcp(dt_model3) # display the results 
-# plotcp(dt_model3) # visualize cross-validation results 
-# summary(dt_model3) # detailed summary of splits
-# printcp(dt_model3)
-# 
-# # plot tree 
-# loadPkg("rpart.plot")
-# rpart.plot(dt_model3, main="Decision Tree for Employment")
-# 
-# p1 <- predict(dt_model3, test, type = 'prob')
-# p1 <- p1[,2]
-# roc_dt3 <- roc(test$Employed, p1, percent = TRUE)
-# auc(roc_dt3)
-# plot(roc_dt3)
-```
+We observe an AUC value of 0.869, which is just a little less than our original AUC of 0.872. This means that our assumption of `Age`, `EdLevel` and `ComputerSkills` being the most important factors to get hired was true. In fact, as per our model, we could practically ignore the rest of the factors.
+
+For our 4th question:
+
+Is there a notable difference between distance based models and tree based models?
+
+The answer is yes as we see a clear difference in the AUC ROC score of the KNN model and the Decision tree model.
+
