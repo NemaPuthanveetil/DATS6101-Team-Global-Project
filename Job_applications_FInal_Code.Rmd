@@ -1,0 +1,607 @@
+---
+title: "Job_applications"
+authors: "Sajan Kumar Kar, Sai Pavan Mekala, Neelima Puthanveetil, Sandhya Karki"
+date: "2023-10-15"
+output:
+  html_document:
+    code_folding: hide
+    theme: flatly
+    highlight: pygments
+    number_sections: false
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Team Global project on Job Applicants Data
+## 1. Import Libraries
+
+
+```{r Libraries}
+# Uncomment and run the below line to install the required packages
+# install.packages(c("gganimate", "png", "gifski"))
+# install.packages("mltools")
+# install.packages("data.table")
+# install.packages("MLmetrics")
+# install.packages("rpart")
+# install.packages("class")
+# install.packages("e1071")
+library(rpart.plot)
+library(mltools)
+library(data.table)
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+library(ezids)
+library(gganimate)
+library(png)
+library(gifski)
+library(pROC)
+library(MLmetrics)
+library(rpart)
+library(class)
+library(e1071)
+library(ROCR)
+
+
+```
+
+## 2. Import Data
+
+```{r Import_data}
+df = data.frame(read.csv('stackoverflow_full.csv', header = TRUE))
+xkabledplyhead(df, title = "Job Applicants Data")
+```
+```{r Structure}
+# Structure of a data frame 
+str(df) 
+```
+
+The dataframe has 73462 records. We have `index`, `employemnt`, `yearscode`, `yearscodepro` and `previoussalary` as integer type and the rest are of character types. Going ahead we would need to convert some of them to factors.
+
+## 3. Data preprocessing & Cleaning
+
+Let's first check for missing values and duplicate values if any.
+
+```{r missing values}
+# Check the missing values and count them in each column
+print(colSums(is.na(df)))
+```
+
+
+```{r duplicates}
+# Check duplicates
+length(unique(df$Index))
+```
+
+We notice that there are no missing values and duplicates in the data. So, we have all the observations to work with.
+
+Now that we know this, let us do some cleaning and feature engineering. First we'll extract the numeric columns.
+
+```{r Numeric columns}
+# Extract the numeric columns
+head(subset(df, select = c(names(df)[sapply(df, is.numeric)])))
+```
+
+
+```{r Numeric feature cleaning}
+df_clean <- subset(df, select = -c(Index))
+df_clean$Employment = as.character(df_clean$Employment)
+df_clean$Employment[df_clean$Employment == "1"] <- "currently_employed"
+df_clean$Employment[df_clean$Employment=="0"] <- "not_currently_employed"
+df_clean$Employment = factor(df_clean$Employment)
+df_clean$Employed = as.character(df_clean$Employed)
+df_clean$Employed[df_clean$Employed == "1"] <- "hired"
+df_clean$Employed[df_clean$Employed == "0"] <- "not_hired"
+df_clean$Employed = factor(df_clean$Employed)
+str(df_clean)
+```
+
+Now let's take a look at the character columns.
+
+```{r Char columns}
+# Extract the character columns
+head(subset(df_clean, select = c(names(df)[sapply(df, is.character)])))
+
+```
+
+```{r char feature cleaning}
+df_clean$Age = factor(df_clean$Age)
+df_clean$Accessibility = factor(df_clean$Accessibility)
+df_clean$EdLevel = factor(df_clean$EdLevel, ordered = T, 
+                          levels = c("Other", "NoHigherEd", "Undergraduate", "Master", "PhD"))
+df_clean$Gender = factor(df_clean$Gender)
+df_clean$MentalHealth = factor(df_clean$MentalHealth)
+df_clean$MainBranch = factor(df_clean$MainBranch)
+str(df_clean)
+```
+
+
+Let's check the number of different countries we have.
+
+```{r country}
+length(unique(df_clean$Country))
+
+```
+
+There are 172 different countries. (Leaving this as it is for the time being)
+
+Let's see if there is data where their professional coding experience is more than their coding experience. If there is such data, we have to remove it because that's practically faulty data.
+
+```{r remove faulty data}
+
+nrow(subset(df_clean, subset = df_clean$YearsCode<df_clean$YearsCodePro))
+# We observe 588 such records
+df_clean = subset(df_clean, subset = df_clean$YearsCode>df_clean$YearsCodePro)
+
+```
+
+
+Let's take a look at some plots and distribution in order to deal with outliers.
+
+```{r outlier detection}
+# Create a list of the columns that we use in combined boxplot
+columns_to_plot <- c("YearsCode", "YearsCodePro", "PreviousSalary", "ComputerSkills")
+
+# Set up the plotting area to display all boxplots together
+par(mfrow = c(2, length(columns_to_plot)))
+
+# Display the boxplots
+for (i in 1:length(columns_to_plot)) {
+  boxplot(df_clean[[columns_to_plot[i]]], main = columns_to_plot[i],col = "lightblue")
+}
+for (i in 1:length(columns_to_plot)) {
+  hist(df_clean[[columns_to_plot[i]]], main = columns_to_plot[i], xlab = element_blank(), col = "lightblue")
+}
+# plotting area layout
+par(mfrow = c(2, 1))
+
+```
+
+```{r quantiles}
+o_code= quantile(df_clean$YearsCode, probs = 0.75, na.rm = FALSE) + 
+  (1.5 * IQR(df_clean$YearsCode))
+o_procode = quantile(df_clean$YearsCodePro, probs = 0.75, na.rm = FALSE) + 
+  (1.5 * IQR(df_clean$YearsCodePro))
+o_presal = quantile(df_clean$PreviousSalary, probs = 0.75, na.rm = FALSE) + 
+  (1.5 * IQR(df_clean$PreviousSalary))
+o_cskill = quantile(df_clean$ComputerSkills, probs = 0.75, na.rm = FALSE) + 
+  (1.5 * IQR(df_clean$ComputerSkills))
+
+print(paste(o_code, o_procode, o_presal, o_cskill))
+```
+
+```{r outlier removal}
+df_clean = subset(df_clean, subset = df_clean$YearsCode < 40)
+df_clean = subset(df_clean, subset = df_clean$YearsCodePro < 40)
+df_clean = subset(df_clean, subset = df_clean$ComputerSkills < 35)
+```
+
+
+Lets take a look at the final data now:
+
+```{r final data}
+df_final <- df_clean
+xkabledplyhead(df_final, title = "Final Data")
+
+```
+
+```{r Final Data Basic Info}
+
+# Getting the number of categorical and numerical columns
+cat_cols <- colnames(subset(df_final, select = c(names(df_final)[(sapply(df_final, is.factor)) | 
+                                                       (sapply(df_final, is.ordered)) | 
+                                                       (sapply(df_final, is.character))])))
+
+num_cols <- colnames(subset(df_final, select = c(names(df_final)[sapply(df_final, is.integer)])))
+
+# Displaying the information
+cat("Basic summary and Raw Counts for the Dataset:\n")
+cat("Rows:", dim(df_final)[1], "\n")
+cat("Columns:", dim(df_final)[2], "\n")
+cat("Numerical columns:", num_cols, "\n")
+cat("Categorical Columns:", cat_cols, "\n")
+
+```
+
+## 4. EDA
+
+Let's first try to get a good picture of the data which will act as the 1st step to answer the questions that we proposed.
+
+
+```{r plot- Ed by Gender}
+
+ggplot(data = subset(df_final, subset = Employed=='hired'), aes(EdLevel, after_stat(count))) + 
+  geom_bar(aes(fill = Gender), position = 'dodge', alpha = 0.5) +
+  labs(title = "Education Level by Gender for Employed Workers", x="Education Level", y="Count")
+
+```
+
+
+```{r plot- Ed by Emp}
+ggplot(data = df_final, aes(EdLevel)) + 
+  geom_bar(aes(fill = Employment), position = 'dodge', alpha = 0.5) +
+  labs(title = "Education Level by Employment", x="Education Level", y="Count")
+
+```
+
+
+
+```{r plot- PrevSal by MentalHealth(1)}
+ggplot(data = df_final, aes(x = PreviousSalary, fill = MentalHealth)) +
+  geom_density(alpha = 0.5) +
+  labs(title = "Density plot of Previous Salary by Mental Health", x="Previous Salary", y= 'Density')
+
+```
+
+
+```{r plot- PrevSal by MentalHealth(2)}
+
+ggplot(data = df_final, aes(x = MentalHealth, y = PreviousSalary)) +
+  geom_jitter(alpha = 0.5, col = 'navy') +
+  labs(title = "Previous Salary by Mental Health", x = 'Mental Health', y="Previous Salary")
+
+```
+
+```{r plot- PrevSal by MentalHealth(3)}
+plotdata <- df_final %>%
+  group_by(MentalHealth) %>%
+  summarize(mean_prevsalary = mean(PreviousSalary))
+
+ggplot(data = plotdata, aes(x = MentalHealth, y = mean_prevsalary)) +
+  geom_bar(stat = 'identity', alpha = 0.5, aes(fill = MentalHealth)) +
+  labs(title = "Mean Previous Salary by Mental Health", x = 'Mental Health', y="Previous Salary")
+
+```
+We notice that the mean previous salary of applicants having mental health issues is higher.
+
+
+Because we have over 65,000 data points, we can use statistical methods that apply to data satisfying normality conditions (because of the central limit theorem).
+
+## 5. Hypothesis Testing
+We consistently use the standard alpha-level of .05 as a basis for making conclusions for our hypothesis tests.
+
+### Test 1: Is there a significant difference between employed males and non-males in their respective education levels?
+
+$H_0:$ There is no difference in the number of undergraduate males who are employed when compared to nonmales
+
+$H_a:$ There is a significant difference in the number of undergraduate males who are employed when compared to nonmales
+```{r, two sample z test for proportions: undergraduate}
+# We first subset into the different education levels, here undergraduate
+undergrad <- subset(df_clean, df_clean$EdLevel == "Undergraduate")
+
+
+# For the two sample z test, we need our two samples, males and nonmales
+undergrad_male <- subset(undergrad, undergrad$Gender == "Man") # Sample 1, males
+
+undergrad_male_employed <- subset(undergrad_male, undergrad_male$Employment == "currently_employed")
+
+undergrad_nonmales <- subset(undergrad, undergrad$Gender != "Man") # Sample 2, females and nonbinary
+
+undergrad_nonmales_employed <- (subset(undergrad_nonmales, undergrad_nonmales$Employment == "currently_employed"))
+
+
+undergrad_employed_ztest <- prop.test(c(nrow(undergrad_male_employed), nrow(undergrad_nonmales_employed)), c(nrow(undergrad_male),nrow(undergrad_nonmales)))
+undergrad_employed_ztest
+```
+At an alpha-level of .05 we fail to reject the null hypothesis and conclude that there is not a significant difference in the number of males vs nonmales who have a bachelor's degree and are employed.
+
+$H_0:$ There is no difference in the number of males with a master's degree who are employed when compared to nonmales
+
+$H_a:$ There is a significant difference in the number of males with a master's degree who are employed when compared to nonmales
+
+```{r, two sample z test for proportions: masters}
+# We first subset into the different education levels, here masters
+masters <- subset(df_clean, df_clean$EdLevel == "Master")
+
+
+# For the two sample z test, we need our two samples, males and nonmales
+masters_male <- subset(masters, masters$Gender == "Man") # Sample 1, males
+
+masters_male_employed <- subset(masters_male, masters_male$Employment == "currently_employed")
+
+
+masters_nonmales <- subset(masters, undergrad$Gender != "Man") # Sample 2, females and nonbinary
+
+masters_nonmales_employed <- (subset(masters_nonmales, masters_nonmales$Employment == "currently_employed"))
+
+
+masters_employed_ztest <- prop.test(c(nrow(masters_male_employed), nrow(masters_nonmales_employed)), c(nrow(masters_male),nrow(masters_nonmales)))
+masters_employed_ztest
+
+```
+At and alpha-level of .05 we reject the null hypothesis and conclude that there is a significant difference in the number of males vs nonmales who have a master's degree and are employed.
+
+$H_0:$ There is no difference in the number of males with a PhD who are employed when compared to nonmales
+
+$H_a:$ There is a significant difference in the number of males with a PhDwho are employed when compared to nonmales
+```{r, two sample z test for proportions: Phd}
+# We first subset into the different education levels, here PhD
+phd <- subset(df_clean, df_clean$EdLevel == "PhD")
+
+
+# For the two sample z test, we need our two samples, males and nonmales
+phd_male <- subset(phd, phd$Gender == "Man") # Sample 1, males
+
+phd_male_employed <- subset(phd_male, phd_male$Employment == "currently_employed")
+
+phd_nonmales <- subset(phd, phd$Gender != "Man") # Sample 2, females and nonbinary
+
+phd_nonmales_employed <- (subset(phd_nonmales, phd_nonmales$Employment == "currently_employed"))
+
+
+phd_employed_ztest <- prop.test(c(nrow(phd_male_employed), nrow(phd_nonmales_employed)), c(nrow(phd_male),nrow(phd_nonmales)))
+phd_employed_ztest
+```
+At and alpha-level of .05 we fail to reject the null hypothesis and conclude that there is not a significant difference in the number of males vs nonmales who have a doctorate degree and are employed.
+
+
+### Test 4: Does mental health influence previous salary?
+$H_0:$ Whether an individual is a professional developer or not is independent of their age.
+
+$H_a:$ Age and status of being a professional developer are associated with each other.
+
+```{r, two sample t-test for means}
+# Subset the PreviousSalary for individuals with 'Yes' and 'No' in the MentalHealth column
+salary_yes <- df_clean$PreviousSalary[df_clean$MentalHealth == "Yes"]
+salary_no <- df_clean$PreviousSalary[df_clean$MentalHealth == "No"]
+
+# Checking the mean of both groups just to get an idea
+format(mean(salary_yes, na.rm = TRUE), digits=5)
+format(mean(salary_no, na.rm = TRUE), digits=5)
+
+# Now we conduct a two-sample t-test on PreviousSalary between the two groups
+ttest_2sample_salary_yes_no <- t.test(salary_yes, salary_no)
+ttest_2sample_salary_yes_no
+
+```
+
+At an alpha-level of .05 we reject the null hypothesis. We conclude that the mean salary of those with mental health issues is significantly different (in this case, higher) than those without.
+
+## 6. Data Preparation
+In preparation for model building, we want to check if the data types are accurate, encode categorical variables, scale any parameters if needed, perform feature engineering, and check for severe data imbalance.
+
+```{r, data prep checking}
+str(df_final)
+```
+
+From our EDA section, we see that all variables have been converted to their correct, respective data types. We still leave the "Country" variable as is, since there are far too many variables for practical analysis based on the methods we currently know. (Perhaps we can consider smaller analysis by subsetting the data based on "Country".) 
+
+Now, we will encode our categorical variables; namely `Age`, `Accessibility`, `EdLevel`, `Employment`, `Gender`, `MentalHealth`, and `MainBranch` (leaving "Country" as it is).
+
+Since `Age` and `EdLevel` are ordinal variables, we use ordinal encoding to prepare this subset of categorical data.\
+Now, `Accessibility`, `Employment`, `MentalHealth`, `MainBranch` are nominal variables with just 2 categories within them, so one-hot encoding them will just unnecessarily create more features, so we will label encode them.
+
+```{r, ordinal encoding}
+#saving df_final copy
+df_enc = df_final
+
+# We first want to set age as an ordinal factor:
+df_enc$Age = factor(df_enc$Age, ordered = T, 
+                          levels = c("<35", ">35"))
+# EdLevel was already converted to an ordinal variable in the EDA section so we can proceed
+
+# Now we can conduct label encoding on Age and Education Level:
+df_enc$Age <- as.numeric(df_enc$Age)
+df_enc$EdLevel <- as.numeric(df_enc$EdLevel)
+df_enc$Accessibility <- as.numeric(df_enc$Accessibility)
+df_enc$Employment <- as.numeric(df_enc$Employment)
+df_enc$MentalHealth <- as.numeric(df_enc$MentalHealth)
+df_enc$MainBranch <- as.numeric(df_enc$MainBranch)
+
+```
+
+`Gender` has 3 categories and is nominal, so we will use the one-hot-encoding method.
+
+```{r, one hot encoding}
+# subsetting the dataframe to select those cateogrical variables that require one hot encoding:
+one_hot_df <- subset(df_enc, select = Gender)
+
+#performing one hot encoding
+one_hot_df <- one_hot(as.data.table(one_hot_df))
+
+# saving the dataframe before one hot encoding:
+df_before_oneHot <- df_enc
+
+# dropping the categorical variables that we just performed one hot encoding on and adding the new columns:
+drops <- "Gender"
+df_enc <- df_enc[ , !(names(df_enc) %in% drops)]
+
+df_enc <- cbind(df_enc, one_hot_df)
+
+```
+
+We can't really work with `HaveWorkedWith` column, it is too messy. The `ComputerSkills` feature is built on top of it so we'll be using this.
+
+```{r column remove}
+df_enc <- subset(df_enc, select = -c(HaveWorkedWith))
+```
+
+The country column was experimented with but didn't give good results and was hence removed.
+
+``` {r}
+df_final2 <- subset(df_enc, select = -c(Country))
+# head(df_final2)
+str(df_final2)
+```
+Let's do a quick class imbalance check.
+
+``` {r Imbalance check}
+ggplot(data = df_final2, aes(Employed, after_stat(count))) + 
+  geom_bar(alpha = 0.5, col = 'navy')
+
+```
+
+Since there's no such major imbalance, we don't need to resample our data in any way and we can proceed normally.\
+Finally, for the numerical variables in the train set, we want to scale them.
+
+```{r standardization}
+df_final2 <- df_final2 %>%
+  mutate_at(vars('YearsCode', 'YearsCodePro', 'PreviousSalary', 'ComputerSkills'), scale)
+```
+
+
+## 7. Model Building
+
+```{r train test split}
+data_sample <- sample(c(TRUE, FALSE), nrow(df_final2), replace=TRUE, prob=c(0.8, 0.2))
+train <- df_final2[data_sample, ]
+test <- df_final2[!data_sample, ]
+
+```
+
+
+```{r Logistic Regression model}
+set.seed(47)
+lr_model <- glm(Employed~., data = train, family = "binomial")
+summary(lr_model)
+
+```
+
+From the p-values, we observe that `EdLevel`, `Employment`, `MainBranch`, `PreviousSalary` and `ComputerSkills` are the most important features. Let's evaluate the model and see.\
+Since we do not have unbalanced data (for our target column), and we want to know the overall performance of the model, we'll use AUC ROC as our evaluation metric.
+
+```{r LR- AUC ROC Evaluation}
+pred=predict(lr_model, test, type = "response" )
+# test$prob=prob
+roc_lr <- roc(test$Employed, pred)
+auc(roc_lr) # area-under-curve prefer 0.8 or higher.
+plot(roc_lr, print.auc = T, main = "ROC Curve for LR Model", col = "#514BA2", lwd = 2)
+```
+We obtain an Area under the curve as `r auc(roc_lr)` which is an amazing value, so the Logistic regression model works well.
+
+```{r KNN model}
+train_data <- train[, names(train) != "Employed"]
+test_data <- test[, names(test) != "Employed"]
+train_labels <- train$Employed
+
+# KNN model with k = 3
+k <- 3
+knn_model <- class::knn(train = train_data, test = test_data, cl = train_labels, k = k, prob=TRUE)
+```
+
+```{r KNN- AUC ROC Evaluation}
+roc_knn <-roc(test$Employed, attributes(knn_model)$prob)
+auc(roc_knn)
+plot(roc_knn, print.auc = T, main = "ROC Curve for KNN Model", col = "#514BA2", lwd = 2)
+```
+The KNN Model doesn't give us a good result, unfortunately. 
+
+```{r SVM model}
+svm_model <- svm(Employed ~ ., data = train, kernel = "linear", probability = TRUE)
+
+# Make predictions
+svm_predictions <- predict(svm_model, test, probability = TRUE)
+
+```
+
+```{r SVM- AUC ROC Evaluation}
+roc_svm <- roc(test$Employed, as.numeric(svm_predictions))
+auc(roc_svm)
+plot(roc_svm, print.auc = T, main = "ROC Curve for SVM Model", col = "#514BA2", lwd = 2)
+
+```
+
+`r auc(roc_svm)` is a pretty good result but our logistic regression model is still the best.
+
+```{r Decision Tree model}
+# Growing the tree
+set.seed(47)
+dt_model <- rpart(Employed ~ ., data=df_final2)
+
+plotcp(dt_model)
+summary(dt_model)
+printcp(dt_model)
+
+# plot tree 
+rpart.plot(dt_model, main="Decision Tree for Employment")
+```
+
+```{r, Decision Tree ROC and AUC}
+dt_pred <- predict(dt_model, test, type = 'prob')# instead of p1 dt_pred
+dt_pred <- dt_pred[,2]
+roc_dt <- roc(test$Employed, dt_pred)# roc_dt
+auc(roc_dt)
+plot(roc_dt, print.auc = T, main = "ROC Curve for Decistion Tree Model", col = "#514BA2", lwd = 2)
+```
+
+It does give a good enough result. The Logistic Regression model outperforms this but it's still a decent model. Also, we can conclude that there is a notable difference between the result of distance based model(KNN) and tree based model(Decision Tree) for our data. Tree models work a lot better.
+
+
+```{r, Decision Tree Tuning, message=FALSE}
+minsplit_vals <- c(2, 3, 5, 7, 10, 12, 15, 17, 20, 23, 27, 30, 45, 50, 75, 91, 100)
+max_depth_vals <- c(2, 3, 5, 7, 10, 12, 15, 17, 20, 23, 27, 30)
+
+auc_values = c()
+
+# Nested for loop to iterate through all combinations
+for (minsplit_val in minsplit_vals) {
+  for (max_depth_val in max_depth_vals) {
+    dt_model_loop <- rpart(Employed ~ ., data=train, minsplit = minsplit_val, maxdepth = max_depth_val)
+    p1_loop <- predict(dt_model_loop, test, type = 'prob')
+    p1_loop <- p1_loop[,2]
+    r_loop <- roc(test$Employed, p1_loop, percent = TRUE)
+    AUC_val <- auc(r_loop)
+    auc_values <- c(auc_values, AUC_val)
+    print(paste('The AUC value for model with minsplit =', minsplit_val, 'and maxdepth =', max_depth_val, 'is', round(AUC_val, digits = 2), '%'))
+  }
+}
+max(auc_values)
+```
+
+
+Let's try a model with everything except the number of computer skills.\
+```{r, DT without computer skills}
+dt_model_nocompskills <- rpart(Employed ~ Age + Accessibility + EdLevel + Employment + MentalHealth + MainBranch + YearsCode + YearsCodePro + PreviousSalary + Gender_Man + Gender_NonBinary + Gender_Woman, data=train)
+
+rpart.plot(dt_model_nocompskills, main="Decision Tree for Employment")
+dt_nocs_pred <- predict(dt_model_nocompskills, test, type = 'prob')
+dt_nocs_pred  <- dt_nocs_pred [,2]
+r <- roc(test$Employed, dt_nocs_pred )
+auc(r)
+plot(r, print.auc = T, main = "ROC Curve for Decistion Tree Model Without Computer Skills", col = "#514BA2", lwd = 2)
+```
+
+
+We notice that our best model is the Logistic Regression model. Let's use that to get an answer for the question:
+
+1. Can we predict with at least 60% accuracy whether an individual will be employed or not,
+based on just their age, education level and number of skills?
+
+```{r Q3 Logistic Regression}
+set.seed(47)
+lr_model3 <- glm(Employed~Age +  EdLevel + ComputerSkills, data = train, family = "binomial")
+
+pred3=predict(lr_model3, test, type = "response" )
+roc_lr3 <- roc(test$Employed, pred3)
+auc(roc_lr3) # area-under-curve prefer 0.8 or higher.
+plot(roc_lr3, print.auc = T, main = "ROC Curve for LR Model [Age +Edlevel + ComputerSkills]", col = "#514BA2", lwd = 2)
+```
+We observe an AUC value of 0.869, which is just a little less than our original AUC of 0.872. This means that our assumption of `Age`, `EdLevel` and `ComputerSkills` being the most important factors to get hired was true. In fact, as per our model, we could practically ignore the rest of the factors. 
+
+```{r Q3 Decision Tree}
+set.seed(47)
+dt_model3 <- rpart(Employed ~ Age +  EdLevel + ComputerSkills, data=train)
+
+printcp(dt_model3) # display the results 
+plotcp(dt_model3) # visualize cross-validation results 
+summary(dt_model3) # detailed summary of splits
+printcp(dt_model3)
+
+# plot tree 
+loadPkg("rpart.plot")
+rpart.plot(dt_model3, main="Decision Tree for Employment")
+
+p1 <- predict(dt_model3, test, type = 'prob')
+p1 <- p1[,2]
+roc_dt3 <- roc(test$Employed, p1, percent = TRUE)
+auc(roc_dt3)
+plot(roc_dt3)
+```
