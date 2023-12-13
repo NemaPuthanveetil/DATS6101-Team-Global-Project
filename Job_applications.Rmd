@@ -534,16 +534,7 @@ We can't really work with `HaveWorkedWith` column, it is too messy. The `Compute
 df_enc <- subset(df_enc, select = -c(HaveWorkedWith))
 ```
 
-
-*This will be experimented upon for model building*
-
-```{r one hot country}
-# one-hot encode Country here
-# df_enc$Country = factor(df_enc$Country)
-# df_enc <- subset(cbind(df_enc, one_hot(as.data.table(df_enc$Country))), select = -c(Country))
-
-# str(df_enc)
-```
+The country column was experimented with but didn't give good results and was hence removed.
 
 ``` {r}
 df_final2 <- subset(df_enc, select = -c(Country))
@@ -633,35 +624,22 @@ plot(roc_svm, print.auc = T, main = "ROC Curve for SVM Model", col = "#514BA2", 
 ```{r Decision Tree model}
 # Growing the tree
 set.seed(47)
-# dt_model <- rpart(Employed ~ Age + Accessibility + EdLevel + Employment + MentalHealth + MainBranch + YearsCode + YearsCodePro + PreviousSalary + Gender_Man + Gender_NonBinary + Gender_Woman, data=train)
-dt_model <- rpart(Employed ~ ., data=df_final2)# instead of dt_model, dt_model
+dt_model <- rpart(Employed ~ ., data=df_final2)
 
-printcp(dt_model) # display the results 
-plotcp(dt_model) # visualize cross-validation results 
-summary(dt_model) # detailed summary of splits
+plotcp(dt_model)
+summary(dt_model)
 printcp(dt_model)
 
 # plot tree 
 rpart.plot(dt_model, main="Decision Tree for Employment")
-
-## Should we include analysis on what happens when we don't include ComputerSkills?
-```
-
-```{r, Pruning and Plotting the Decision Tree}
-#prune the tree 
-pdt_model <- prune(dt_model, cp = dt_model$cptable[2,"CP"])
-#pdt_model <- prune(dt_model, cp = dt_model$cptable[which.min( dt_model$cptable[,"xerror"] ),"CP"])
-
-
-rpart.plot(pdt_model, main="Pruned Decision Tree for Employment")
 ```
 
 ```{r, Decision Tree ROC and AUC}
-p1 <- predict(dt_model, test, type = 'prob')# instead of p1 dt_pred
-p1 <- p1[,2]
-r <- roc(test$Employed, p1)# roc_dt
-auc(r)
-plot(r, print.auc = T, main = "ROC Curve for Decistion Tree Model", col = "#514BA2", lwd = 2)
+dt_pred <- predict(dt_model, test, type = 'prob')# instead of p1 dt_pred
+dt_pred <- dt_pred[,2]
+roc_dt <- roc(test$Employed, dt_pred)# roc_dt
+auc(roc_dt)
+plot(roc_dt, print.auc = T, main = "ROC Curve for Decistion Tree Model", col = "#514BA2", lwd = 2)
 ```
 
 It does give a good enough result. The Logistic Regression model outperforms this but it's still a decent model. Also, we can conclude that there is a notable difference between the result of distance based model(KNN) and tree based model(Decision Tree) for our data. Tree models work a lot better.
@@ -670,9 +648,6 @@ It does give a good enough result. The Logistic Regression model outperforms thi
 ```{r, Decision Tree Tuning, message=FALSE}
 minsplit_vals <- c(2, 3, 5, 7, 10, 12, 15, 17, 20, 23, 27, 30, 45, 50, 75, 91, 100)
 max_depth_vals <- c(2, 3, 5, 7, 10, 12, 15, 17, 20, 23, 27, 30)
-
-# minsplit_vals <- c(10456)
-# max_depth_vals <- c(24)
 
 auc_values = c()
 
@@ -694,11 +669,15 @@ max(auc_values)
 
 
 Let's try a model with everything except the number of computer skills.\
-```{r DT without computer skills}
+```{r, DT without computer skills}
+dt_model_nocompskills <- rpart(Employed ~ Age + Accessibility + EdLevel + Employment + MentalHealth + MainBranch + YearsCode + YearsCodePro + PreviousSalary + Gender_Man + Gender_NonBinary + Gender_Woman, data=train)
 
-dt_model <- rpart(Employed ~ Age + Accessibility + EdLevel + Employment + MentalHealth + MainBranch + YearsCode + YearsCodePro + PreviousSalary + Gender_Man + Gender_NonBinary + Gender_Woman, data=train)
-
-
+rpart.plot(dt_model_nocompskills, main="Decision Tree for Employment")
+dt_nocs_pred <- predict(dt_model_nocompskills, test, type = 'prob')
+dt_nocs_pred  <- dt_nocs_pred [,2]
+r <- roc(test$Employed, dt_nocs_pred )
+auc(r)
+plot(r, print.auc = T, main = "ROC Curve for Decistion Tree Model Without Computer Skills", col = "#514BA2", lwd = 2)
 ```
 
 
@@ -733,7 +712,7 @@ rpart.plot(dt_model3, main="Decision Tree for Employment")
 
 p1 <- predict(dt_model3, test, type = 'prob')
 p1 <- p1[,2]
-r <- roc(test$Employed, p1, percent = TRUE)
-auc(r)
-plot(r)
+roc_dt3 <- roc(test$Employed, p1, percent = TRUE)
+auc(roc_dt3)
+plot(roc_dt3)
 ```
