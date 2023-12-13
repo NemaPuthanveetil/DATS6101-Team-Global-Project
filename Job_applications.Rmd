@@ -602,6 +602,7 @@ roc_knn <-roc(test$Employed, attributes(knn_model)$prob)
 auc(roc_knn)
 plot(roc_knn, print.auc = T, main = "ROC Curve for KNN Model", col = "#514BA2", lwd = 2)
 ```
+
 The KNN Model doesn't give us a good result, unfortunately. 
 
 ```{r SVM model}
@@ -644,7 +645,6 @@ plot(roc_dt, print.auc = T, main = "ROC Curve for Decistion Tree Model", col = "
 
 It does give a good enough result. The Logistic Regression model outperforms this but it's still a decent model. Also, we can conclude that there is a notable difference between the result of distance based model(KNN) and tree based model(Decision Tree) for our data. Tree models work a lot better.
 
-
 ```{r, Decision Tree Tuning, message=FALSE}
 minsplit_vals <- c(2, 3, 5, 7, 10, 12, 15, 17, 20, 23, 27, 30, 45, 50, 75, 91, 100)
 max_depth_vals <- c(2, 3, 5, 7, 10, 12, 15, 17, 20, 23, 27, 30)
@@ -666,8 +666,6 @@ for (minsplit_val in minsplit_vals) {
 max(auc_values)
 ```
 
-
-
 Let's try a model with everything except the number of computer skills.\
 ```{r, DT without computer skills}
 dt_model_nocompskills <- rpart(Employed ~ Age + Accessibility + EdLevel + Employment + MentalHealth + MainBranch + YearsCode + YearsCodePro + PreviousSalary + Gender_Man + Gender_NonBinary + Gender_Woman, data=train)
@@ -679,7 +677,6 @@ r <- roc(test$Employed, dt_nocs_pred )
 auc(r)
 plot(r, print.auc = T, main = "ROC Curve for Decistion Tree Model Without Computer Skills", col = "#514BA2", lwd = 2)
 ```
-
 
 We notice that our best model is the Logistic Regression model. Let's use that to get an answer for the question:
 
@@ -695,6 +692,7 @@ roc_lr3 <- roc(test$Employed, pred3)
 auc(roc_lr3) # area-under-curve prefer 0.8 or higher.
 plot(roc_lr3, print.auc = T, main = "ROC Curve for LR Model [Age +Edlevel + ComputerSkills]", col = "#514BA2", lwd = 2)
 ```
+
 We observe an AUC value of 0.869, which is just a little less than our original AUC of 0.872. This means that our assumption of `Age`, `EdLevel` and `ComputerSkills` being the most important factors to get hired was true. In fact, as per our model, we could practically ignore the rest of the factors. 
 
 ```{r Q3 Decision Tree}
